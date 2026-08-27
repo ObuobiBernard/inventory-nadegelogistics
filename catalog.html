@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NADEGE Logistics · Equipment Catalog</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #0b0e14;
+            --bg-secondary: #131a24;
+            --bg-card: #1a232f;
+            --bg-card-hover: #212d3d;
+            --border-color: #2a3a4a;
+            --text-primary: #edf2f7;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-gold: #f5b342;
+            --accent-gold-dim: rgba(245, 179, 66, 0.15);
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0b0e14 0%, #1a232f 100%);
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 50%, var(--accent-gold-dim) 0%, transparent 60%);
+            opacity: 0.4;
+            animation: pulseGlow 6s ease-in-out infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0.6;
+            }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+        .hero img {
+            max-width: 180px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(245, 179, 66, 0.3));
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+        .hero h1 span {
+            color: var(--accent-gold);
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        .hero .btn-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: 0.3s ease;
+            border: none;
+            cursor: pointer;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .btn-primary {
+            background: var(--accent-gold);
+            color: #0b0e14;
+            border-color: var(--accent-gold);
+        }
+        .btn-primary:hover {
+            background: #e6a63c;
+            border-color: #e6a63c;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--text-secondary);
+        }
+        .btn-outline:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-gold);
+        }
+
+        /* ===== CATEGORY FILTER ===== */
+        .filter-bar {
+            padding: 30px 20px 10px;
+            text-align: center;
+        }
+        .filter-bar .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            margin: 4px 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .filter-bar .filter-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        .filter-bar .filter-btn.active {
+            background: var(--accent-gold);
+            color: #0b0e14;
+            border-color: var(--accent-gold);
+        }
+
+        /* ===== GRID ===== */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 20px auto 60px;
+            padding: 0 20px;
+        }
+        .equip-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: 0.35s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .equip-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: var(--accent-gold);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .equip-card .card-image {
+            height: 180px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--text-muted);
+            position: relative;
+            overflow: hidden;
+        }
+        .equip-card .card-image i {
+            transition: 0.5s;
+        }
+        .equip-card:hover .card-image i {
+            transform: scale(1.2) rotate(5deg);
+            color: var(--accent-gold);
+        }
+        .equip-card .card-body {
+            padding: 20px 22px 22px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .equip-card .card-body h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .equip-card .card-body .category {
+            font-size: 0.8rem;
+            color: var(--accent-gold);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .equip-card .card-body .desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 8px 0 14px;
+            line-height: 1.5;
+            flex: 1;
+        }
+        .equip-card .card-body .pricing {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+            margin-top: 4px;
+        }
+        .equip-card .card-body .pricing span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .equip-card .card-body .pricing .price {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .equip-card .card-body .status-badge {
+            align-self: flex-start;
+            padding: 3px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: var(--accent-green);
+            color: #0b0e14;
+            margin-bottom: 10px;
+        }
+        .equip-card .card-body .status-badge.rented {
+            background: var(--accent-gold);
+        }
+        .equip-card .card-body .status-badge.sold {
+            background: var(--accent-blue);
+        }
+        .equip-card .card-body .status-badge.maintenance {
+            background: var(--accent-red);
+        }
+        .equip-card .card-body .status-badge.reserved {
+            background: #8b5cf6;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-muted);
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            border-top: 1px solid var(--border-color);
+            padding: 30px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: var(--accent-gold);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+            .catalog-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 20px;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero {
+                min-height: 50vh;
+            }
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            .filter-bar .filter-btn {
+                font-size: 0.8rem;
+                padding: 6px 14px;
+                margin: 3px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero" data-aos="fade-in" data-aos-duration="1000">
+        <div class="hero-content">
+            <!-- Logo – same file as in sidebar -->
+            <img src="nadege logo.jpg" alt="NADEGE Logistics" style="max-width:180px;" />
+            <h1>Premium Event <span>Equipment</span></h1>
+            <p>Explore our wide range of LED Screens, Stages, Trusses, PA Systems, and more – available for rental and purchase.</p>
+            <div class="btn-group">
+                <a href="index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Back to Inventory</a>
+                <a href="#catalog" class="btn btn-outline"><i class="fas fa-search"></i> Browse Catalog</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FILTER BAR ===== -->
+    <div class="filter-bar" id="filterBar" data-aos="fade-up" data-aos-delay="100">
+        <button class="filter-btn active" data-category="all">All</button>
+        <!-- categories will be injected here -->
+    </div>
+
+    <!-- ===== CATALOG GRID ===== -->
+    <div class="catalog-grid" id="catalogGrid"></div>
+
+    <!-- ===== FOOTER ===== -->
+    <div class="footer">
+        &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era. &nbsp;·&nbsp; 
+        <a href="index.html">Inventory Management</a>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <!-- AOS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Init AOS
+        AOS.init({
+            once: true,
+            offset: 40,
+            duration: 600,
+            easing: 'ease-out'
+        });
+
+        // ============================================================
+        //  DATA – same keys as inventory app
+        // ============================================================
+        const STORAGE_KEYS = {
+            equipment: 'eventequip_equipment',
+            categories: 'eventequip_categories',
+        };
+
+        function getData(key) {
+            try {
+                return JSON.parse(localStorage.getItem(key)) || [];
+            } catch { return []; }
+        }
+
+        // ============================================================
+        //  RENDER CATALOG
+        // ============================================================
+        let currentCategory = 'all';
+
+        function getCategoryName(id) {
+            const cat = getData(STORAGE_KEYS.categories).find(c => c.id === id);
+            return cat ? cat.name : 'Uncategorized';
+        }
+
+        function getCategoryIcon(id) {
+            const cat = getData(STORAGE_KEYS.categories).find(c => c.id === id);
+            return cat ? cat.icon : 'fa-solid fa-cube';
+        }
+
+        function renderCatalog(filter = 'all') {
+            const equipment = getData(STORAGE_KEYS.equipment);
+            const filtered = filter === 'all' ? equipment : equipment.filter(e => e.category === filter);
+
+            const grid = document.getElementById('catalogGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No equipment found</h3>
+                        <p>Try adjusting the filter or add items in the inventory system.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map((item, index) => {
+                const statusClass = item.status || 'available';
+                const icon = getCategoryIcon(item.category);
+                const catName = getCategoryName(item.category);
+                return `
+                    <div class="equip-card" data-aos="fade-up" data-aos-delay="${(index % 6) * 50}">
+                        <div class="card-image">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div class="card-body">
+                            <span class="status-badge ${statusClass}">${statusClass}</span>
+                            <h3>${item.name}</h3>
+                            <div class="category">${catName}</div>
+                            <p class="desc">${item.description || 'No description provided.'}</p>
+                            <div class="pricing">
+                                <span>Rental: <span class="price">$${item.rentalPrice.toFixed(2)}</span> / day</span>
+                                <span>Sale: <span class="price">$${item.salePrice.toFixed(2)}</span></span>
+                            </div>
+                            <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
+                                Qty: ${item.quantity} &nbsp;·&nbsp; Available: ${item.available}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Re-init AOS for new elements
+            AOS.refresh();
+        }
+
+        // ============================================================
+        //  CATEGORY FILTERS
+        // ============================================================
+        function buildFilters() {
+            const categories = getData(STORAGE_KEYS.categories);
+            const bar = document.getElementById('filterBar');
+            // Keep the "All" button
+            let html = `<button class="filter-btn active" data-category="all">All</button>`;
+            categories.forEach(cat => {
+                html += `<button class="filter-btn" data-category="${cat.id}">${cat.name}</button>`;
+            });
+            bar.innerHTML = html;
+
+            // Attach click events
+            bar.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    renderCatalog(currentCategory);
+                });
+            });
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        function init() {
+            // If no data in localStorage, show empty state with guidance
+            // (the inventory app will have seeded data; if not, we show empty)
+            buildFilters();
+            renderCatalog('all');
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        console.log('🏗️ NADEGE Logistics Catalog loaded. Data from localStorage.');
+    </script>
+</body>
+</html>
