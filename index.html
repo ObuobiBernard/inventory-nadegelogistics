@@ -102,22 +102,28 @@
         }
         .sidebar-brand {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            padding: 0 8px 32px 8px;
+            gap: 8px;
+            padding: 0 8px 24px 8px;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 24px;
         }
-        .sidebar-brand i {
-            font-size: 28px;
-            color: var(--accent-gold);
+        .sidebar-brand img {
+            max-width: 100%;
+            max-height: 70px;
+            object-fit: contain;
         }
-        .sidebar-brand span {
+        .sidebar-brand .brand-text {
+            text-align: center;
+        }
+        .sidebar-brand .brand-text span {
             font-size: 18px;
             font-weight: 700;
             letter-spacing: -0.3px;
+            color: var(--text-primary);
         }
-        .sidebar-brand small {
+        .sidebar-brand .brand-text small {
             display: block;
             font-size: 10px;
             font-weight: 400;
@@ -125,6 +131,12 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
             margin-top: 1px;
+        }
+        .sidebar-brand .brand-tagline {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-top: 2px;
         }
         .nav {
             display: flex;
@@ -834,11 +846,13 @@
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <i class="fas fa-chalkboard"></i>
-            <div>
+            <!-- Logo image – make sure the file exists in your repo -->
+            <img src="nadege logo.jpg" alt="NADEGE Logistics" />
+            <div class="brand-text">
                 <span>NADEGE Logistics</span>
                 <small>Inventory · RMS</small>
             </div>
+            <div class="brand-tagline">An anchor in a new era.</div>
         </div>
         <nav class="nav">
             <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
