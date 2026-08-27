@@ -866,7 +866,7 @@
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v2.1 · Sync to Sheets ready
+            v2.2 · CORS fix
         </div>
     </aside>
 
@@ -1513,7 +1513,7 @@
         }
 
         // ============================================================
-        //  SYNC TO GOOGLE SHEETS
+        //  SYNC TO GOOGLE SHEETS (CORS-safe)
         // ============================================================
         async function syncToGoogleSheets() {
             const settings = getSettings();
@@ -1528,6 +1528,7 @@
             syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
 
             try {
+                // Build the payload
                 const payload = {
                     secret: settings.secret,
                     equipment: getData(STORAGE_KEYS.equipment),
@@ -1537,13 +1538,16 @@
                     categories: getData(STORAGE_KEYS.categories),
                 };
 
+                // Send as form-urlencoded to avoid CORS preflight
+                const formData = new URLSearchParams();
+                formData.append('data', JSON.stringify(payload));
+
                 const response = await fetch(settings.url, {
                     method: 'POST',
-                    mode: 'cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: JSON.stringify(payload),
+                    body: formData.toString(),
                 });
 
                 const result = await response.json();
@@ -2371,7 +2375,7 @@
 
         document.addEventListener('DOMContentLoaded', init);
 
-        console.log('🏗️ NADEGE Logistics Inventory System loaded (v2.1 - Google Sheets Sync).');
+        console.log('🏗️ NADEGE Logistics Inventory System loaded (v2.2 - CORS fix).');
         console.log('📦 Data stored in localStorage.');
     </script>
 </body>
