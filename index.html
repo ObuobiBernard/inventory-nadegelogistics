@@ -178,6 +178,15 @@
             padding: 2px 8px;
             border-radius: 20px;
         }
+        .nav-item.catalog-link {
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+            color: var(--accent-gold);
+        }
+        .nav-item.catalog-link:hover {
+            background: var(--accent-gold-dim);
+        }
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
             padding-top: 16px;
@@ -286,6 +295,15 @@
         .btn-sync:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        .btn-catalog {
+            background: var(--accent-gold-dim);
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+        .btn-catalog:hover {
+            background: var(--accent-gold);
+            color: #0b0e14;
         }
 
         /* ===== STATS ===== */
@@ -877,6 +895,11 @@
             <a class="nav-item" data-page="categories" onclick="navigate('categories')">
                 <i class="fas fa-tags"></i> Categories
             </a>
+            <!-- Catalog link -->
+            <a class="nav-item catalog-link" href="catalog.html" target="_blank">
+                <i class="fas fa-store"></i> View Catalog
+                <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">📤</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
@@ -899,6 +922,9 @@
                     <i class="fas fa-search"></i>
                     <input type="text" id="globalSearch" placeholder="Search..." oninput="handleGlobalSearch(this.value)"/>
                 </div>
+                <a href="catalog.html" target="_blank" class="btn btn-catalog" title="View public catalog">
+                    <i class="fas fa-store"></i> Catalog
+                </a>
                 <button class="btn btn-sync" id="syncBtn" onclick="syncToGoogleSheets()" title="Sync all data to Google Sheets">
                     <i class="fas fa-cloud-upload-alt"></i> Sync
                 </button>
