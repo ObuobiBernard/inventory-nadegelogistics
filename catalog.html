@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Equipment Catalog</title>
-    <!-- Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Google Font Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-    <!-- AOS (Animate On Scroll) -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
 
     <style>
@@ -49,7 +48,6 @@
             color: inherit;
         }
 
-        /* ===== HERO ===== */
         .hero {
             position: relative;
             min-height: 55vh;
@@ -112,7 +110,6 @@
             font-style: italic;
         }
 
-        /* ===== CATEGORY FILTER ===== */
         .filter-bar {
             padding: 30px 20px 10px;
             text-align: center;
@@ -139,7 +136,6 @@
             border-color: var(--accent-gold);
         }
 
-        /* ===== GRID ===== */
         .catalog-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -154,7 +150,7 @@
             border: 1px solid var(--border-color);
             overflow: hidden;
             transition: 0.35s ease;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             position: relative;
             display: flex;
             flex-direction: column;
@@ -162,7 +158,7 @@
         .equip-card:hover {
             transform: translateY(-8px) scale(1.01);
             border-color: var(--accent-gold);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
         .equip-card .card-image {
             height: 180px;
@@ -247,7 +243,6 @@
             background: #8b5cf6;
         }
 
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -260,7 +255,6 @@
             margin-bottom: 16px;
         }
 
-        /* ===== FOOTER ===== */
         .footer {
             border-top: 1px solid var(--border-color);
             padding: 30px 20px;
@@ -272,7 +266,6 @@
             color: var(--text-primary);
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.2rem;
@@ -302,149 +295,8 @@
 </head>
 <body>
 
-    <!-- ===== HERO ===== -->
     <section class="hero" data-aos="fade-in" data-aos-duration="1000">
         <div class="hero-content">
             <img src="nadege logo.jpg" alt="NADEGE Logistics" />
             <h1>Premium Event <span>Equipment</span></h1>
-            <p>Explore our wide range of LED Screens, Stages, Trusses, PA Systems, and more – available for rental and purchase.</p>
-            <div class="tagline">An anchor in a new era.</div>
-        </div>
-    </section>
-
-    <!-- ===== FILTER BAR ===== -->
-    <div class="filter-bar" id="filterBar" data-aos="fade-up" data-aos-delay="100">
-        <button class="filter-btn active" data-category="all">All</button>
-        <!-- categories will be injected here -->
-    </div>
-
-    <!-- ===== CATALOG GRID ===== -->
-    <div class="catalog-grid" id="catalogGrid"></div>
-
-    <!-- ===== FOOTER ===== -->
-    <div class="footer">
-        &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era.
-    </div>
-
-    <!-- ===== SCRIPTS ===== -->
-    <!-- AOS -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        // Init AOS
-        AOS.init({
-            once: true,
-            offset: 40,
-            duration: 600,
-            easing: 'ease-out'
-        });
-
-        // ============================================================
-        //  DATA – same keys as inventory app
-        // ============================================================
-        const STORAGE_KEYS = {
-            equipment: 'eventequip_equipment',
-            categories: 'eventequip_categories',
-        };
-
-        function getData(key) {
-            try {
-                return JSON.parse(localStorage.getItem(key)) || [];
-            } catch { return []; }
-        }
-
-        // ============================================================
-        //  RENDER CATALOG
-        // ============================================================
-        let currentCategory = 'all';
-
-        function getCategoryName(id) {
-            const cat = getData(STORAGE_KEYS.categories).find(c => c.id === id);
-            return cat ? cat.name : 'Uncategorized';
-        }
-
-        function getCategoryIcon(id) {
-            const cat = getData(STORAGE_KEYS.categories).find(c => c.id === id);
-            return cat ? cat.icon : 'fa-solid fa-cube';
-        }
-
-        function renderCatalog(filter = 'all') {
-            const equipment = getData(STORAGE_KEYS.equipment);
-            const filtered = filter === 'all' ? equipment : equipment.filter(e => e.category === filter);
-
-            const grid = document.getElementById('catalogGrid');
-            if (filtered.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column:1/-1;">
-                        <i class="fas fa-box-open"></i>
-                        <h3>No equipment found</h3>
-                        <p>Check back later – our inventory is updated regularly.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            grid.innerHTML = filtered.map((item, index) => {
-                const statusClass = item.status || 'available';
-                const icon = getCategoryIcon(item.category);
-                const catName = getCategoryName(item.category);
-                return `
-                    <div class="equip-card" data-aos="fade-up" data-aos-delay="${(index % 6) * 50}">
-                        <div class="card-image">
-                            <i class="${icon}"></i>
-                        </div>
-                        <div class="card-body">
-                            <span class="status-badge ${statusClass}">${statusClass}</span>
-                            <h3>${item.name}</h3>
-                            <div class="category">${catName}</div>
-                            <p class="desc">${item.description || 'No description provided.'}</p>
-                            <div class="pricing">
-                                <span>Rental: <span class="price">$${item.rentalPrice.toFixed(2)}</span> / day</span>
-                                <span>Sale: <span class="price">$${item.salePrice.toFixed(2)}</span></span>
-                            </div>
-                            <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
-                                Qty: ${item.quantity} &nbsp;·&nbsp; Available: ${item.available}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            AOS.refresh();
-        }
-
-        // ============================================================
-        //  CATEGORY FILTERS
-        // ============================================================
-        function buildFilters() {
-            const categories = getData(STORAGE_KEYS.categories);
-            const bar = document.getElementById('filterBar');
-            let html = `<button class="filter-btn active" data-category="all">All</button>`;
-            categories.forEach(cat => {
-                html += `<button class="filter-btn" data-category="${cat.id}">${cat.name}</button>`;
-            });
-            bar.innerHTML = html;
-
-            bar.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentCategory = this.dataset.category;
-                    renderCatalog(currentCategory);
-                });
-            });
-        }
-
-        // ============================================================
-        //  INIT
-        // ============================================================
-        function init() {
-            buildFilters();
-            renderCatalog('all');
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-
-        console.log('🏗️ NADEGE Logistics Catalog loaded (public view).');
-    </script>
-</body>
-</html>
+            <p>Explore our wide range of LED Screens, Stages, Trusses, PA Systems, and more – available for rental and purchase.</
