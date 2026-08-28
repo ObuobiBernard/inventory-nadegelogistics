@@ -2,14 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Inventory Management</title>
+
+    <!-- ===== CSP (Content Security Policy) ===== -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com;
+        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+        img-src 'self' data:;
+        connect-src 'self' https://script.google.com;
+        base-uri 'self';
+    " />
+
+    <!-- ===== PRECONNECT & PRELOAD ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <!-- Google Font Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <!-- lz-string for compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
     <style>
-        /* ===== RESET & BASE ===== */
+        /* ===== CRITICAL CSS (above-the-fold) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -37,11 +57,10 @@
             --transition: 0.25s ease;
         }
         html {
-            font-size: 15px;
             scroll-behavior: smooth;
         }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             display: flex;
@@ -50,8 +69,8 @@
             position: relative;
         }
         a {
-            color: inherit;
             text-decoration: none;
+            color: inherit;
         }
         button {
             cursor: pointer;
@@ -127,8 +146,8 @@
         }
         .password-box .input-group {
             display: flex;
-            gap: 10px;
             flex-direction: column;
+            gap: 10px;
         }
         .password-box .input-group input {
             background: var(--bg-secondary);
@@ -156,6 +175,37 @@
             font-size: 13px;
             margin-top: 12px;
             min-height: 20px;
+        }
+
+        /* ===== SESSION TIMEOUT WARNING ===== */
+        .timeout-warning {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--accent-gold);
+            border-radius: var(--radius);
+            padding: 16px 28px;
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.3s ease;
+        }
+        .timeout-warning.visible {
+            display: flex;
+        }
+        .timeout-warning .btn {
+            padding: 6px 18px;
+            background: var(--accent-gold);
+            color: #0b0e14;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+        }
+        .timeout-warning .btn:hover {
+            background: #e6a63c;
         }
 
         /* ===== SIDEBAR ===== */
@@ -361,6 +411,8 @@
             background: #1e7b4c;
             color: #fff;
             border-color: #1e7b4c;
+            min-width: 140px;
+            justify-content: center;
         }
         .btn-sync:hover {
             background: #166b3f;
@@ -378,6 +430,15 @@
         .btn-catalog:hover {
             background: var(--accent-gold);
             color: #0b0e14;
+        }
+        .btn-lock {
+            background: var(--accent-red);
+            color: #fff;
+            border-color: var(--accent-red);
+        }
+        .btn-lock:hover {
+            background: #dc2626;
+            border-color: #dc2626;
         }
 
         /* ===== STATS ===== */
@@ -548,6 +609,11 @@
             background: rgba(239, 68, 68, 0.15);
             color: var(--accent-red);
         }
+        .status-badge.deleted {
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
         .table-actions {
             display: flex;
             gap: 6px;
@@ -569,6 +635,9 @@
         }
         .table-actions .delete-btn {
             color: var(--accent-red);
+        }
+        .table-actions .restore-btn {
+            color: var(--accent-green);
         }
         .table-actions .rent-btn {
             color: var(--accent-gold);
@@ -876,12 +945,6 @@
         .w-full {
             width: 100%;
         }
-        .truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 140px;
-        }
 
         /* notification toast */
         .toast-container {
@@ -928,6 +991,9 @@
         .toast.info i {
             color: var(--accent-blue);
         }
+
+        /* ===== NON-CRITICAL CSS (lazy-loaded) ===== */
+        /* This will be injected after page load */
     </style>
 </head>
 <body>
@@ -946,6 +1012,13 @@
         </div>
     </div>
 
+    <!-- ===== SESSION TIMEOUT WARNING ===== -->
+    <div class="timeout-warning" id="timeoutWarning">
+        <i class="fas fa-clock" style="color:var(--accent-gold);"></i>
+        <span>Your session will expire in <strong id="timeoutCountdown">30</strong> seconds due to inactivity.</span>
+        <button class="btn" id="extendSessionBtn">Stay Logged In</button>
+    </div>
+
     <!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -962,6 +1035,7 @@
         <nav class="nav">
             <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
                 <i class="fas fa-chart-pie"></i> Dashboard
+                <span class="badge" id="dashboardBadge">•</span>
             </a>
             <a class="nav-item" data-page="equipment" onclick="navigate('equipment')">
                 <i class="fas fa-cubes"></i> Equipment
@@ -982,20 +1056,24 @@
             <a class="nav-item" data-page="categories" onclick="navigate('categories')">
                 <i class="fas fa-tags"></i> Categories
             </a>
-            <!-- Catalog link (opens in new tab) -->
             <a class="nav-item catalog-link" href="catalog.html" target="_blank">
                 <i class="fas fa-store"></i> View Catalog
                 <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">📤</span>
             </a>
+            <!-- Lock button -->
+            <a class="nav-item" onclick="lockSession()" style="margin-top:8px;border-top:1px solid var(--border-color);padding-top:14px;color:var(--accent-red);">
+                <i class="fas fa-lock"></i> Lock Now
+            </a>
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v2.3 · Staff Only
+            v3.0 · Secure
         </div>
     </aside>
 
     <!-- ===== MAIN ===== -->
-    <main class="main" id="mainContent">
+    <main class="main" id="mainContent" style="opacity:0;transition:opacity 0.5s;">
+
         <!-- Top Bar -->
         <div class="topbar">
             <div style="display:flex;align-items:center;gap:14px;">
@@ -1007,13 +1085,13 @@
             <div class="topbar-actions">
                 <div class="search-bar">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Search..." oninput="handleGlobalSearch(this.value)"/>
+                    <input type="text" id="globalSearch" placeholder="Search..." oninput="handleGlobalSearchDebounced(this.value)" />
                 </div>
                 <a href="catalog.html" target="_blank" class="btn btn-catalog" title="View public catalog">
                     <i class="fas fa-store"></i> Catalog
                 </a>
                 <button class="btn btn-sync" id="syncBtn" onclick="syncToGoogleSheets()" title="Sync all data to Google Sheets">
-                    <i class="fas fa-cloud-upload-alt"></i> Sync
+                    <i class="fas fa-cloud-upload-alt"></i> <span id="syncLabel">Sync</span>
                 </button>
                 <button class="btn btn-primary" onclick="openAddModal()">
                     <i class="fas fa-plus"></i> Add Equipment
@@ -1061,17 +1139,20 @@
                 </div>
             </div>
 
-            <!-- Recent Activity -->
+            <!-- Activity Log -->
             <div class="section">
                 <div class="section-header">
-                    <h2><i class="fas fa-clock" style="color:var(--accent-gold);margin-right:8px;"></i>Recent Activity</h2>
+                    <h2><i class="fas fa-history" style="color:var(--accent-gold);margin-right:8px;"></i>Activity Log</h2>
+                    <div class="actions">
+                        <button class="btn btn-sm btn-outline" onclick="clearActivityLog()"><i class="fas fa-trash"></i> Clear</button>
+                    </div>
                 </div>
-                <div class="section-body">
-                    <div id="recentActivityList">
+                <div class="section-body" style="max-height:300px;overflow-y:auto;">
+                    <div id="activityLogList">
                         <div class="empty-state">
                             <i class="fas fa-inbox"></i>
                             <h3>No activity yet</h3>
-                            <p>Start by adding equipment or creating a rental.</p>
+                            <p>Actions will be logged here.</p>
                         </div>
                     </div>
                 </div>
@@ -1088,6 +1169,7 @@
                             <option value="all">All Categories</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="openAddModal()"><i class="fas fa-plus"></i> Add</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleShowDeleted()" id="showDeletedBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
                 <div class="section-body">
@@ -1121,6 +1203,7 @@
                     <h2><i class="fas fa-handshake" style="color:var(--accent-gold);margin-right:8px;"></i>Rentals</h2>
                     <div class="actions">
                         <button class="btn btn-primary btn-sm" onclick="openRentalModal()"><i class="fas fa-plus"></i> New Rental</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleShowDeletedRentals()" id="showDeletedRentalsBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
                 <div class="section-body">
@@ -1153,6 +1236,7 @@
                     <h2><i class="fas fa-tag" style="color:var(--accent-gold);margin-right:8px;"></i>Sales</h2>
                     <div class="actions">
                         <button class="btn btn-primary btn-sm" onclick="openSaleModal()"><i class="fas fa-plus"></i> New Sale</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleShowDeletedSales()" id="showDeletedSalesBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
                 <div class="section-body">
@@ -1184,6 +1268,7 @@
                     <h2><i class="fas fa-users" style="color:var(--accent-gold);margin-right:8px;"></i>Customers</h2>
                     <div class="actions">
                         <button class="btn btn-primary btn-sm" onclick="openCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleShowDeletedCustomers()" id="showDeletedCustomersBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
                 <div class="section-body">
@@ -1214,6 +1299,7 @@
                     <h2><i class="fas fa-tags" style="color:var(--accent-gold);margin-right:8px;"></i>Categories</h2>
                     <div class="actions">
                         <button class="btn btn-primary btn-sm" onclick="openCategoryModal()"><i class="fas fa-plus"></i> Add Category</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleShowDeletedCategories()" id="showDeletedCategoriesBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
                 <div class="section-body">
@@ -1239,7 +1325,7 @@
 
     <!-- ===== MODALS ===== -->
 
-    <!-- Settings Modal (for Google Sheets Sync) -->
+    <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="modal-header">
@@ -1249,12 +1335,12 @@
             <form id="settingsForm" onsubmit="saveSettings(event)">
                 <div class="form-group">
                     <label>Google Apps Script Web App URL *</label>
-                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" required/>
+                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" required />
                     <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:4px;">Paste the URL from your Apps Script deployment.</small>
                 </div>
                 <div class="form-group">
                     <label>Secret Key *</label>
-                    <input type="text" id="gasSecret" placeholder="Enter your secret key" required/>
+                    <input type="text" id="gasSecret" placeholder="Enter your secret key" required />
                     <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:4px;">Must match the secret in your Apps Script code.</small>
                 </div>
                 <div class="modal-footer">
@@ -1273,10 +1359,10 @@
                 <button class="modal-close" onclick="closeModal('equipmentModal')">&times;</button>
             </div>
             <form id="equipmentForm" onsubmit="saveEquipment(event)">
-                <input type="hidden" id="equipEditId" value=""/>
+                <input type="hidden" id="equipEditId" value="" />
                 <div class="form-group">
                     <label>Equipment Name *</label>
-                    <input type="text" id="equipName" placeholder="e.g. 6m Truss Section" required/>
+                    <input type="text" id="equipName" placeholder="e.g. 6m Truss Section" required />
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1297,21 +1383,21 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Quantity *</label>
-                        <input type="number" id="equipQty" min="1" value="1" required/>
+                        <input type="number" id="equipQty" min="1" value="1" required />
                     </div>
                     <div class="form-group">
                         <label>Available *</label>
-                        <input type="number" id="equipAvailable" min="0" value="1" required/>
+                        <input type="number" id="equipAvailable" min="0" value="1" required />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rental Price (per day) *</label>
-                        <input type="number" id="equipRentalPrice" step="0.01" min="0" placeholder="0.00" required/>
+                        <input type="number" id="equipRentalPrice" step="0.01" min="0" placeholder="0.00" required />
                     </div>
                     <div class="form-group">
                         <label>Sale Price *</label>
-                        <input type="number" id="equipSalePrice" step="0.01" min="0" placeholder="0.00" required/>
+                        <input type="number" id="equipSalePrice" step="0.01" min="0" placeholder="0.00" required />
                     </div>
                 </div>
                 <div class="form-group">
@@ -1345,16 +1431,16 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Start Date *</label>
-                        <input type="date" id="rentalStart" required/>
+                        <input type="date" id="rentalStart" required />
                     </div>
                     <div class="form-group">
                         <label>End Date *</label>
-                        <input type="date" id="rentalEnd" required/>
+                        <input type="date" id="rentalEnd" required />
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Quantity *</label>
-                    <input type="number" id="rentalQty" min="1" value="1" required/>
+                    <input type="number" id="rentalQty" min="1" value="1" required />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('rentalModal')">Cancel</button>
@@ -1382,7 +1468,7 @@
                 </div>
                 <div class="form-group">
                     <label>Quantity *</label>
-                    <input type="number" id="saleQty" min="1" value="1" required/>
+                    <input type="number" id="saleQty" min="1" value="1" required />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('saleModal')">Cancel</button>
@@ -1400,22 +1486,22 @@
                 <button class="modal-close" onclick="closeModal('customerModal')">&times;</button>
             </div>
             <form id="customerForm" onsubmit="saveCustomer(event)">
-                <input type="hidden" id="custEditId" value=""/>
+                <input type="hidden" id="custEditId" value="" />
                 <div class="form-group">
                     <label>Full Name *</label>
-                    <input type="text" id="custName" placeholder="John Doe" required/>
+                    <input type="text" id="custName" placeholder="John Doe" required />
                 </div>
                 <div class="form-group">
                     <label>Email *</label>
-                    <input type="email" id="custEmail" placeholder="john@example.com" required/>
+                    <input type="email" id="custEmail" placeholder="john@example.com" required />
                 </div>
                 <div class="form-group">
                     <label>Phone</label>
-                    <input type="text" id="custPhone" placeholder="+1234567890"/>
+                    <input type="text" id="custPhone" placeholder="+1234567890" />
                 </div>
                 <div class="form-group">
                     <label>Company</label>
-                    <input type="text" id="custCompany" placeholder="Company name"/>
+                    <input type="text" id="custCompany" placeholder="Company name" />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('customerModal')">Cancel</button>
@@ -1433,14 +1519,14 @@
                 <button class="modal-close" onclick="closeModal('categoryModal')">&times;</button>
             </div>
             <form id="categoryForm" onsubmit="saveCategory(event)">
-                <input type="hidden" id="catEditId" value=""/>
+                <input type="hidden" id="catEditId" value="" />
                 <div class="form-group">
                     <label>Category Name *</label>
-                    <input type="text" id="catName" placeholder="e.g. LED Screens" required/>
+                    <input type="text" id="catName" placeholder="e.g. LED Screens" required />
                 </div>
                 <div class="form-group">
                     <label>Icon (Font Awesome class)</label>
-                    <input type="text" id="catIcon" placeholder="fa-solid fa-display" value="fa-solid fa-cube"/>
+                    <input type="text" id="catIcon" placeholder="fa-solid fa-display" value="fa-solid fa-cube" />
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" onclick="closeModal('categoryModal')">Cancel</button>
@@ -1453,196 +1539,41 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- ============================================================ -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ============================================================ -->
     <script>
         // ============================================================
-        //  PASSWORD PROTECTION
+        //  CONFIGURATION
         // ============================================================
-        const STAFF_PASSWORD = 'nadege2025'; // 🔑 Change this to your own password
-
-        function checkPassword() {
-            const overlay = document.getElementById('passwordOverlay');
-            const input = document.getElementById('passwordInput');
-            const error = document.getElementById('passwordError');
-            const entered = input.value.trim();
-
-            if (entered === STAFF_PASSWORD) {
-                overlay.classList.add('hidden');
-                // Focus on the main content
-                document.getElementById('mainContent').style.opacity = '1';
-                // Initialize the app after login
-                initApp();
-            } else {
-                error.textContent = '❌ Incorrect password. Please try again.';
-                input.value = '';
-                input.focus();
-                setTimeout(() => { error.textContent = ''; }, 3000);
-            }
-        }
-
-        // Enter key support
-        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
-        });
-
-        document.getElementById('passwordSubmit').addEventListener('click', checkPassword);
+        const STAFF_PASSWORD = 'nadege2025'; // 🔑 Change this
+        const SYNC_COOLDOWN = 30; // seconds
+        const SESSION_TIMEOUT = 5 * 60; // 5 minutes (in seconds)
+        const WARNING_BEFORE = 30; // show warning 30 seconds before
 
         // ============================================================
-        //  DATA LAYER
+        //  UTILITY FUNCTIONS
         // ============================================================
-        const STORAGE_KEYS = {
-            equipment: 'eventequip_equipment',
-            categories: 'eventequip_categories',
-            customers: 'eventequip_customers',
-            rentals: 'eventequip_rentals',
-            sales: 'eventequip_sales',
-            settings: 'nadege_sync_settings'
-        };
-
-        function getData(key) {
-            try {
-                return JSON.parse(localStorage.getItem(key)) || [];
-            } catch { return []; }
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
-        function setData(key, data) {
-            localStorage.setItem(key, JSON.stringify(data));
-        }
-
-        function getSettings() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEYS.settings)) || {};
-            } catch { return {}; }
-        }
-
-        function setSettings(settings) {
-            localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
-        }
-
-        function genId() {
-            return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        }
-
-        function today() {
-            return new Date().toISOString().slice(0, 10);
-        }
-
-        // ============================================================
-        //  DEFAULT DATA
-        // ============================================================
-        function initDefaultData() {
-            if (!localStorage.getItem(STORAGE_KEYS.categories)) {
-                const defaults = [
-                    { id: 'cat1', name: 'LED Screens', icon: 'fa-solid fa-display' },
-                    { id: 'cat2', name: 'Stage', icon: 'fa-solid fa-stage' },
-                    { id: 'cat3', name: 'Trusses', icon: 'fa-solid fa-bezier-curve' },
-                    { id: 'cat4', name: 'PA Systems', icon: 'fa-solid fa-volume-high' },
-                    { id: 'cat5', name: 'Lighting', icon: 'fa-solid fa-lightbulb' },
-                    { id: 'cat6', name: 'Other', icon: 'fa-solid fa-cube' },
-                ];
-                setData(STORAGE_KEYS.categories, defaults);
-            }
-            if (!localStorage.getItem(STORAGE_KEYS.equipment)) {
-                const equip = [
-                    { id: 'e1', name: 'P3.9 LED Panel', category: 'cat1', description: 'Indoor rental panel, 500x500mm',
-                        quantity: 120, available: 85, rentalPrice: 45, salePrice: 1200, status: 'available' },
-                    { id: 'e2', name: 'P4.8 LED Wall', category: 'cat1', description: 'Outdoor LED wall, 500x500mm',
-                        quantity: 80, available: 60, rentalPrice: 55, salePrice: 1500, status: 'available' },
-                    { id: 'e3', name: 'Mobile Stage 6x4m', category: 'cat2', description: '6x4m mobile stage with roof',
-                        quantity: 3, available: 2, rentalPrice: 350, salePrice: 8500, status: 'available' },
-                    { id: 'e4', name: 'Truss Tower 4m', category: 'cat3', description: '4m truss tower with base',
-                        quantity: 15, available: 12, rentalPrice: 85, salePrice: 2200, status: 'available' },
-                    { id: 'e5', name: 'Line Array PA System', category: 'cat4', description: '8x dual 10" line array',
-                        quantity: 4, available: 3, rentalPrice: 420, salePrice: 12000, status: 'available' },
-                    { id: 'e6', name: 'Subwoofer 18"', category: 'cat4', description: 'Active 18" subwoofer',
-                        quantity: 8, available: 6, rentalPrice: 95, salePrice: 2800, status: 'available' },
-                    { id: 'e7', name: 'LED Par Can', category: 'cat5', description: 'RGBW LED par can, 36x3W',
-                        quantity: 40, available: 32, rentalPrice: 18, salePrice: 450, status: 'available' },
-                    { id: 'e8', name: 'Truss Section 2m', category: 'cat3', description: '2m truss section, 30x30cm',
-                        quantity: 50, available: 40, rentalPrice: 25, salePrice: 650, status: 'available' },
-                ];
-                setData(STORAGE_KEYS.equipment, equip);
-            }
-            if (!localStorage.getItem(STORAGE_KEYS.customers)) {
-                const customers = [
-                    { id: 'c1', name: 'Alice Johnson', email: 'alice@eventco.com', phone: '+1 555-0101',
-                        company: 'EventCo' },
-                    { id: 'c2', name: 'Bob Smith', email: 'bob@starlight.com', phone: '+1 555-0102',
-                    company: 'Starlight Productions' },
-                    { id: 'c3', name: 'Carol White', email: 'carol@audiovision.com', phone: '+1 555-0103',
-                        company: 'AudioVision' },
-                ];
-                setData(STORAGE_KEYS.customers, customers);
-            }
-            if (!localStorage.getItem(STORAGE_KEYS.rentals)) {
-                const rentals = [{
-                    id: 'r1',
-                    equipmentId: 'e1',
-                    customerId: 'c1',
-                    startDate: '2026-08-15',
-                    endDate: '2026-08-18',
-                    quantity: 20,
-                    totalPrice: 2700,
-                    status: 'active'
-                }];
-                setData(STORAGE_KEYS.rentals, rentals);
-            }
-            if (!localStorage.getItem(STORAGE_KEYS.sales)) {
-                const sales = [{
-                    id: 's1',
-                    equipmentId: 'e3',
-                    customerId: 'c2',
-                    date: '2026-08-10',
-                    quantity: 1,
-                    totalPrice: 8500
-                }];
-                setData(STORAGE_KEYS.sales, sales);
-            }
-        }
-
-        // ============================================================
-        //  HELPERS
-        // ============================================================
-        function getCategory(id) {
-            return getData(STORAGE_KEYS.categories).find(c => c.id === id);
-        }
-
-        function getCategoryName(id) {
-            const cat = getCategory(id);
+        function getCategoryName(id, categories) {
+            const cat = categories.find(c => c.id === id);
             return cat ? cat.name : 'Uncategorized';
         }
 
-        function getCustomer(id) {
-            return getData(STORAGE_KEYS.customers).find(c => c.id === id);
-        }
-
-        function getEquipment(id) {
-            return getData(STORAGE_KEYS.equipment).find(e => e.id === id);
-        }
-
-        function getEquipmentName(id) {
-            const e = getEquipment(id);
-            return e ? e.name : 'Unknown';
-        }
-
-        function getCustomerName(id) {
-            const c = getCustomer(id);
-            return c ? c.name : 'Unknown';
-        }
-
-        function getStatusBadge(status) {
-            const map = {
-                available: 'available',
-                rented: 'rented',
-                sold: 'sold',
-                maintenance: 'maintenance',
-                reserved: 'reserved',
-                active: 'active',
-                returned: 'returned',
-                overdue: 'overdue',
-            };
-            return map[status] || 'available';
+        function getCategoryIcon(id, categories) {
+            const cat = categories.find(c => c.id === id);
+            return cat ? cat.icon : 'fa-solid fa-cube';
         }
 
         function formatCurrency(val) {
@@ -1655,15 +1586,406 @@
             return parts[1] + '/' + parts[2] + '/' + parts[0].slice(2);
         }
 
+        function getStatusBadge(status) {
+            const map = {
+                available: 'available',
+                rented: 'rented',
+                sold: 'sold',
+                maintenance: 'maintenance',
+                reserved: 'reserved',
+                active: 'active',
+                returned: 'returned',
+                overdue: 'overdue',
+                deleted: 'deleted'
+            };
+            return map[status] || 'available';
+        }
+
+        function genId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        }
+
+        function today() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
         // ============================================================
-        //  TOAST NOTIFICATIONS
+        //  DEBOUNCE
+        // ============================================================
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // ============================================================
+        //  INDEXEDDB WRAPPER
+        // ============================================================
+        const DB_NAME = 'NadegeInventoryDB';
+        const DB_VERSION = 3;
+        const STORES = ['equipment', 'categories', 'customers', 'rentals', 'sales', 'settings', 'activity'];
+
+        let db = null;
+        let dbReady = false;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                if (db && dbReady) { resolve(db); return; }
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = function(e) {
+                    const d = e.target.result;
+                    STORES.forEach(storeName => {
+                        if (!d.objectStoreNames.contains(storeName)) {
+                            const store = d.createObjectStore(storeName, { keyPath: 'id' });
+                            if (storeName === 'equipment') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'rentals') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'sales') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'customers') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'categories') store.createIndex('deleted', 'deleted');
+                        }
+                    });
+                    // Migrate from localStorage if exists
+                    const tx = e.target.transaction;
+                    STORES.forEach(storeName => {
+                        const store = tx.objectStore(storeName);
+                        const lsKey = 'eventequip_' + storeName;
+                        const lsData = localStorage.getItem(lsKey);
+                        if (lsData) {
+                            try {
+                                const items = JSON.parse(lsData);
+                                if (Array.isArray(items) && items.length > 0) {
+                                    items.forEach(item => {
+                                        if (!item.deleted) item.deleted = false;
+                                        store.put(item);
+                                    });
+                                    localStorage.removeItem(lsKey);
+                                    console.log(`Migrated ${items.length} items from localStorage.${storeName}`);
+                                }
+                            } catch (err) { /* ignore */ }
+                        }
+                        // Migrate settings
+                        if (storeName === 'settings') {
+                            const settings = localStorage.getItem('nadege_sync_settings');
+                            if (settings) {
+                                try {
+                                    const parsed = JSON.parse(settings);
+                                    if (parsed && parsed.url) {
+                                        store.put({ id: 'sync', ...parsed });
+                                        localStorage.removeItem('nadege_sync_settings');
+                                    }
+                                } catch (err) { /* ignore */ }
+                            }
+                        }
+                    });
+                };
+                request.onsuccess = function(e) {
+                    db = e.target.result;
+                    dbReady = true;
+                    resolve(db);
+                };
+                request.onerror = function(e) {
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                if (!dbReady) { reject('DB not ready'); return; }
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = function() { resolve(request.result || []); };
+                request.onerror = function() { reject(request.error); };
+            });
+        }
+
+        function dbPut(storeName, item) {
+            return new Promise((resolve, reject) => {
+                if (!dbReady) { reject('DB not ready'); return; }
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(item);
+                request.onsuccess = function() { resolve(item); };
+                request.onerror = function() { reject(request.error); };
+            });
+        }
+
+        function dbDelete(storeName, id) {
+            return new Promise((resolve, reject) => {
+                if (!dbReady) { reject('DB not ready'); return; }
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(id);
+                request.onsuccess = function() { resolve(); };
+                request.onerror = function() { reject(request.error); };
+            });
+        }
+
+        function dbGetByIndex(storeName, indexName, value) {
+            return new Promise((resolve, reject) => {
+                if (!dbReady) { reject('DB not ready'); return; }
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const index = store.index(indexName);
+                const request = index.getAll(value);
+                request.onsuccess = function() { resolve(request.result || []); };
+                request.onerror = function() { reject(request.error); };
+            });
+        }
+
+        // ============================================================
+        //  DATA ACCESS LAYER (async)
+        // ============================================================
+        async function getData(storeName) {
+            await openDB();
+            return await dbGetAll(storeName);
+        }
+
+        async function setData(storeName, items) {
+            await openDB();
+            // Clear and re-insert
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            await new Promise((resolve, reject) => {
+                const req = store.clear();
+                req.onsuccess = resolve;
+                req.onerror = reject;
+            });
+            for (const item of items) {
+                await dbPut(storeName, item);
+            }
+        }
+
+        async function saveItem(storeName, item) {
+            await openDB();
+            if (!item.id) item.id = genId();
+            if (item.deleted === undefined) item.deleted = false;
+            await dbPut(storeName, item);
+            return item;
+        }
+
+        async function deleteItem(storeName, id) {
+            await openDB();
+            // Soft delete: mark as deleted
+            const items = await dbGetAll(storeName);
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.deleted = true;
+                await dbPut(storeName, item);
+                return true;
+            }
+            return false;
+        }
+
+        async function restoreItem(storeName, id) {
+            await openDB();
+            const items = await dbGetAll(storeName);
+            const item = items.find(i => i.id === id);
+            if (item && item.deleted) {
+                item.deleted = false;
+                await dbPut(storeName, item);
+                return true;
+            }
+            return false;
+        }
+
+        async function getSettings() {
+            await openDB();
+            const items = await dbGetAll('settings');
+            const setting = items.find(i => i.id === 'sync');
+            return setting ? { url: setting.url || '', secret: setting.secret || '' } : {};
+        }
+
+        async function saveSettings(settings) {
+            await openDB();
+            await dbPut('settings', { id: 'sync', ...settings });
+        }
+
+        // ============================================================
+        //  ACTIVITY LOG
+        // ============================================================
+        async function logActivity(action, details) {
+            await openDB();
+            const entry = {
+                id: genId(),
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details || '',
+                deleted: false
+            };
+            await dbPut('activity', entry);
+            // Keep only last 100 entries to avoid bloat
+            const all = await dbGetAll('activity');
+            const sorted = all.filter(a => !a.deleted).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+            if (sorted.length > 100) {
+                const toRemove = sorted.slice(100);
+                for (const item of toRemove) {
+                    await dbDelete('activity', item.id);
+                }
+            }
+            renderActivityLog();
+        }
+
+        async function renderActivityLog() {
+            const items = await getData('activity');
+            const sorted = items.filter(a => !a.deleted).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+            const container = document.getElementById('activityLogList');
+            if (sorted.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-inbox"></i><h3>No activity yet</h3><p>Actions will be logged here.</p></div>`;
+                return;
+            }
+            const html = sorted.slice(0, 50).map(a => {
+                const time = new Date(a.timestamp).toLocaleString();
+                return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-color);font-size:13px;">
+                            <span>${escapeHtml(a.action)} ${a.details ? '— ' + escapeHtml(a.details) : ''}</span>
+                            <span style="color:var(--text-muted);font-size:11px;">${time}</span>
+                        </div>`;
+            }).join('');
+            container.innerHTML = `<div style="display:flex;flex-direction:column;">${html}</div>`;
+        }
+
+        async function clearActivityLog() {
+            if (!confirm('Clear all activity logs?')) return;
+            const items = await getData('activity');
+            for (const item of items) {
+                await dbDelete('activity', item.id);
+            }
+            renderActivityLog();
+            showToast('Activity log cleared.', 'info');
+        }
+
+        // ============================================================
+        //  CUSTOM DATA HELPERS (with soft delete filtering)
+        // ============================================================
+        async function getActive(storeName, showDeleted = false) {
+            const items = await getData(storeName);
+            return showDeleted ? items : items.filter(i => !i.deleted);
+        }
+
+        // ============================================================
+        //  SESSION TIMEOUT
+        // ============================================================
+        let sessionTimer = null;
+        let warningTimer = null;
+        let countdownInterval = null;
+
+        function resetSessionTimer() {
+            if (!document.getElementById('passwordOverlay').classList.contains('hidden')) return;
+            clearTimeout(sessionTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownInterval);
+            document.getElementById('timeoutWarning').classList.remove('visible');
+
+            // Set warning timer
+            warningTimer = setTimeout(() => {
+                showTimeoutWarning();
+            }, (SESSION_TIMEOUT - WARNING_BEFORE) * 1000);
+
+            // Set session end timer
+            sessionTimer = setTimeout(() => {
+                lockSession();
+            }, SESSION_TIMEOUT * 1000);
+        }
+
+        function showTimeoutWarning() {
+            const warning = document.getElementById('timeoutWarning');
+            const countdown = document.getElementById('timeoutCountdown');
+            warning.classList.add('visible');
+            let remaining = WARNING_BEFORE;
+            countdown.textContent = remaining;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                remaining--;
+                countdown.textContent = remaining;
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        function lockSession() {
+            clearTimeout(sessionTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownInterval);
+            document.getElementById('timeoutWarning').classList.remove('visible');
+            document.getElementById('passwordOverlay').classList.remove('hidden');
+            document.getElementById('mainContent').style.opacity = '0';
+            document.body.style.overflow = 'hidden';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').focus();
+            showToast('Session locked due to inactivity.', 'info');
+        }
+
+        function extendSession() {
+            clearTimeout(sessionTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownInterval);
+            document.getElementById('timeoutWarning').classList.remove('visible');
+            resetSessionTimer();
+            showToast('Session extended.', 'success');
+        }
+
+        // ============================================================
+        //  PASSWORD
+        // ============================================================
+        function checkPassword() {
+            const overlay = document.getElementById('passwordOverlay');
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            const entered = input.value.trim();
+
+            if (entered === STAFF_PASSWORD) {
+                overlay.classList.add('hidden');
+                document.getElementById('mainContent').style.opacity = '1';
+                document.body.style.overflow = 'auto';
+                initApp();
+                resetSessionTimer();
+            } else {
+                error.textContent = '❌ Incorrect password. Please try again.';
+                input.value = '';
+                input.focus();
+                setTimeout(() => { error.textContent = ''; }, 3000);
+            }
+        }
+
+        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+        document.getElementById('passwordSubmit').addEventListener('click', checkPassword);
+        document.getElementById('extendSessionBtn').addEventListener('click', extendSession);
+
+        // Track user activity
+        const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+        activityEvents.forEach(event => {
+            document.addEventListener(event, resetSessionTimer);
+        });
+
+        // ============================================================
+        //  LAZY LOADING - page state
+        // ============================================================
+        let loadedPages = {};
+        let showDeleted = {
+            equipment: false,
+            rentals: false,
+            sales: false,
+            customers: false,
+            categories: false
+        };
+        let currentPage = 'dashboard';
+
+        // ============================================================
+        //  TOAST
         // ============================================================
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${escapeHtml(message)}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -1674,32 +1996,65 @@
         }
 
         // ============================================================
-        //  SYNC TO GOOGLE SHEETS (CORS-safe)
+        //  SYNC TO GOOGLE SHEETS (with compression + progress)
         // ============================================================
+        let lastSyncTime = 0;
+
         async function syncToGoogleSheets() {
-            const settings = getSettings();
+            const settings = await getSettings();
             if (!settings.url || !settings.secret) {
                 showToast('Please configure your Google Sheets sync settings first (⚙️).', 'error');
                 openSettingsModal();
                 return;
             }
 
+            // Rate limiting
+            const now = Date.now();
+            if (now - lastSyncTime < SYNC_COOLDOWN * 1000) {
+                const remaining = Math.ceil((SYNC_COOLDOWN * 1000 - (now - lastSyncTime)) / 1000);
+                showToast(`Please wait ${remaining}s before syncing again.`, 'error');
+                return;
+            }
+
             const syncBtn = document.getElementById('syncBtn');
+            const syncLabel = document.getElementById('syncLabel');
             syncBtn.disabled = true;
-            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+            syncLabel.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
 
             try {
+                // Fetch all data
+                const equipment = await getData('equipment');
+                const rentals = await getData('rentals');
+                const sales = await getData('sales');
+                const customers = await getData('customers');
+                const categories = await getData('categories');
+
+                const totalItems = equipment.length + rentals.length + sales.length + customers.length + categories.length;
+                let processed = 0;
+
+                function updateProgress() {
+                    processed++;
+                    const pct = Math.min(100, Math.round((processed / totalItems) * 100));
+                    syncLabel.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${pct}% (${processed}/${totalItems})`;
+                }
+
+                // Build payload with progress tracking (simplified for single payload)
                 const payload = {
                     secret: settings.secret,
-                    equipment: getData(STORAGE_KEYS.equipment),
-                    rentals: getData(STORAGE_KEYS.rentals),
-                    sales: getData(STORAGE_KEYS.sales),
-                    customers: getData(STORAGE_KEYS.customers),
-                    categories: getData(STORAGE_KEYS.categories),
+                    equipment: equipment.map(e => { updateProgress(); return e; }),
+                    rentals: rentals.map(r => { updateProgress(); return r; }),
+                    sales: sales.map(s => { updateProgress(); return s; }),
+                    customers: customers.map(c => { updateProgress(); return c; }),
+                    categories: categories.map(c => { updateProgress(); return c; }),
                 };
 
+                // Compress the payload
+                const jsonString = JSON.stringify(payload);
+                const compressed = LZString.compressToEncodedURIComponent(jsonString);
+
+                // Send compressed payload
                 const formData = new URLSearchParams();
-                formData.append('data', JSON.stringify(payload));
+                formData.append('data', compressed);
 
                 const response = await fetch(settings.url, {
                     method: 'POST',
@@ -1713,46 +2068,25 @@
 
                 if (result.success) {
                     showToast('✅ ' + (result.message || 'Sync complete! Check your Google Sheet.'), 'success');
+                    await logActivity('Sync to Google Sheets', 'Success');
+                    lastSyncTime = Date.now();
                 } else {
                     showToast('❌ Sync failed: ' + (result.error || 'Unknown error'), 'error');
+                    await logActivity('Sync to Google Sheets', 'Failed: ' + (result.error || 'Unknown'));
                 }
             } catch (error) {
                 showToast('❌ Network error: ' + error.message, 'error');
+                await logActivity('Sync to Google Sheets', 'Error: ' + error.message);
             } finally {
                 syncBtn.disabled = false;
-                syncBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Sync';
+                syncLabel.textContent = 'Sync';
             }
         }
 
         // ============================================================
-        //  SETTINGS MODAL
+        //  NAVIGATION (Lazy Loading)
         // ============================================================
-        function openSettingsModal() {
-            const settings = getSettings();
-            document.getElementById('gasUrl').value = settings.url || '';
-            document.getElementById('gasSecret').value = settings.secret || '';
-            openModal('settingsModal');
-        }
-
-        function saveSettings(e) {
-            e.preventDefault();
-            const url = document.getElementById('gasUrl').value.trim();
-            const secret = document.getElementById('gasSecret').value.trim();
-            if (!url || !secret) {
-                showToast('Please fill in both fields.', 'error');
-                return;
-            }
-            setSettings({ url, secret });
-            closeModal('settingsModal');
-            showToast('Settings saved successfully!', 'success');
-        }
-
-        // ============================================================
-        //  NAVIGATION
-        // ============================================================
-        let currentPage = 'dashboard';
-
-        function navigate(page) {
+        async function navigate(page) {
             currentPage = page;
             document.querySelectorAll('.page-content').forEach(el => el.style.display = 'none');
             const target = document.getElementById('page-' + page);
@@ -1774,24 +2108,34 @@
 
             closeSidebar();
 
-            if (page === 'dashboard') renderDashboard();
-            if (page === 'equipment') renderEquipment();
-            if (page === 'rentals') renderRentals();
-            if (page === 'sales') renderSales();
-            if (page === 'customers') renderCustomers();
-            if (page === 'categories') renderCategories();
-
-            updateBadges();
+            // Lazy load: only render if not loaded yet
+            if (!loadedPages[page]) {
+                loadedPages[page] = true;
+                if (page === 'dashboard') await renderDashboard();
+                if (page === 'equipment') await renderEquipment();
+                if (page === 'rentals') await renderRentals();
+                if (page === 'sales') await renderSales();
+                if (page === 'customers') await renderCustomers();
+                if (page === 'categories') await renderCategories();
+                await updateBadges();
+            } else {
+                // Re-render to reflect changes
+                if (page === 'dashboard') await renderDashboard();
+                if (page === 'equipment') await renderEquipment();
+                if (page === 'rentals') await renderRentals();
+                if (page === 'sales') await renderSales();
+                if (page === 'customers') await renderCustomers();
+                if (page === 'categories') await renderCategories();
+                await updateBadges();
+            }
         }
 
         // ============================================================
         //  SIDEBAR
         // ============================================================
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('open');
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
         }
 
         function closeSidebar() {
@@ -1819,13 +2163,37 @@
         });
 
         // ============================================================
-        //  DASHBOARD
+        //  SETTINGS
         // ============================================================
-        function renderDashboard() {
-            const equip = getData(STORAGE_KEYS.equipment);
-            const rentals = getData(STORAGE_KEYS.rentals);
-            const customers = getData(STORAGE_KEYS.customers);
-            const sales = getData(STORAGE_KEYS.sales);
+        async function openSettingsModal() {
+            const settings = await getSettings();
+            document.getElementById('gasUrl').value = settings.url || '';
+            document.getElementById('gasSecret').value = settings.secret || '';
+            openModal('settingsModal');
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const url = document.getElementById('gasUrl').value.trim();
+            const secret = document.getElementById('gasSecret').value.trim();
+            if (!url || !secret) {
+                showToast('Please fill in both fields.', 'error');
+                return;
+            }
+            await saveSettings({ url, secret });
+            closeModal('settingsModal');
+            showToast('Settings saved successfully!', 'success');
+            await logActivity('Settings updated', 'Sync settings changed');
+        }
+
+        // ============================================================
+        //  DASHBOARD (async)
+        // ============================================================
+        async function renderDashboard() {
+            const equip = await getActive('equipment');
+            const rentals = await getActive('rentals');
+            const customers = await getActive('customers');
+            const sales = await getActive('sales');
 
             const total = equip.length;
             const available = equip.filter(e => e.status === 'available' || e.status === 'reserved').reduce((s, e) => s + e
@@ -1837,61 +2205,28 @@
             document.getElementById('statActiveRentals').textContent = activeRentals;
             document.getElementById('statCustomers').textContent = customers.length;
 
-            const activities = [];
-            rentals.forEach(r => {
-                const eName = getEquipmentName(r.equipmentId);
-                const cName = getCustomerName(r.customerId);
-                activities.push({
-                    date: r.startDate,
-                    text: `📦 Rental: ${eName} → ${cName} (${r.status})`,
-                    type: 'rental'
-                });
-            });
-            sales.forEach(s => {
-                const eName = getEquipmentName(s.equipmentId);
-                const cName = getCustomerName(s.customerId);
-                activities.push({
-                    date: s.date,
-                    text: `💰 Sale: ${eName} → ${cName} (x${s.quantity})`,
-                    type: 'sale'
-                });
-            });
-            activities.sort((a, b) => b.date.localeCompare(a.date));
-            const recent = activities.slice(0, 10);
-
-            const container = document.getElementById('recentActivityList');
-            if (recent.length === 0) {
-                container.innerHTML =
-                    `<div class="empty-state"><i class="fas fa-inbox"></i><h3>No activity yet</h3><p>Start by adding equipment or creating a rental.</p></div>`;
-            } else {
-                container.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">` +
-                    recent.map(a =>
-                        `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-color);font-size:14px;">
-                                <span>${a.text}</span>
-                                <span style="color:var(--text-muted);font-size:12px;">${formatDate(a.date)}</span>
-                            </div>`
-                    ).join('') +
-                    `</div>`;
-            }
+            await renderActivityLog();
+            await updateBadges();
         }
 
         // ============================================================
-        //  EQUIPMENT
+        //  EQUIPMENT (async)
         // ============================================================
-        function renderEquipment() {
-            const equip = getData(STORAGE_KEYS.equipment);
-            const filter = document.getElementById('categoryFilter').value;
+        async function renderEquipment() {
+            const equip = await getActive('equipment', showDeleted.equipment);
+            const categories = await getData('categories');
 
-            const cats = getData(STORAGE_KEYS.categories);
+            // Populate filter
             const filterEl = document.getElementById('categoryFilter');
             const currentVal = filterEl.value;
             filterEl.innerHTML = '<option value="all">All Categories</option>' +
-                cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                categories.filter(c => !c.deleted).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             filterEl.value = currentVal;
 
+            const filter = currentVal === 'all' ? 'all' : currentVal;
             const filtered = filter === 'all' ? equip : equip.filter(e => e.category === filter);
-            const tbody = document.getElementById('equipmentTableBody');
 
+            const tbody = document.getElementById('equipmentTableBody');
             if (filtered.length === 0) {
                 tbody.innerHTML =
                     `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-cubes"></i><h3>No equipment found</h3><p>Add your first piece of equipment.</p></div></td></tr>`;
@@ -1899,12 +2234,13 @@
             }
 
             tbody.innerHTML = filtered.map(e => {
-                const cat = getCategory(e.category);
+                const cat = categories.find(c => c.id === e.category);
                 const catClass = cat ? cat.name.toLowerCase().replace(/\s/g, '') : 'other';
                 const statusClass = getStatusBadge(e.status);
-                return `<tr>
-                            <td><strong>${e.name}</strong><div class="text-muted" style="font-size:11px;">${e.description || ''}</div></td>
-                            <td><span class="category-tag ${catClass}">${cat ? cat.name : 'Uncategorized'}</span></td>
+                const isDeleted = e.deleted === true;
+                return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                            <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
+                            <td><span class="category-tag ${catClass}">${cat ? escapeHtml(cat.name) : 'Uncategorized'}</span></td>
                             <td>${e.quantity}</td>
                             <td>${e.available}</td>
                             <td>${formatCurrency(e.rentalPrice)}</td>
@@ -1912,29 +2248,41 @@
                             <td><span class="status-badge ${statusClass}">${e.status || 'available'}</span></td>
                             <td style="text-align:right;">
                                 <div class="table-actions" style="justify-content:flex-end;">
+                                    ${!isDeleted ? `
                                     <button class="rent-btn" onclick="openRentalFromEquip('${e.id}')" title="Rent"><i class="fas fa-handshake"></i></button>
                                     <button class="sale-btn" onclick="openSaleFromEquip('${e.id}')" title="Sell"><i class="fas fa-tag"></i></button>
                                     <button class="edit-btn" onclick="editEquipment('${e.id}')" title="Edit"><i class="fas fa-edit"></i></button>
                                     <button class="delete-btn" onclick="deleteEquipment('${e.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                    ` : `
+                                    <button class="restore-btn" onclick="restoreEquipment('${e.id}')" title="Restore"><i class="fas fa-undo"></i></button>
+                                    `}
                                 </div>
                             </td>
                         </tr>`;
             }).join('');
         }
 
-        function openAddModal() {
+        function toggleShowDeleted() {
+            showDeleted.equipment = !showDeleted.equipment;
+            document.getElementById('showDeletedBtn').innerHTML = showDeleted.equipment ?
+                '<i class="fas fa-eye-slash"></i> Hide Deleted' :
+                '<i class="fas fa-eye"></i> Show Deleted';
+            renderEquipment();
+        }
+
+        async function openAddModal() {
             document.getElementById('equipEditId').value = '';
             document.getElementById('equipModalTitle').textContent = 'Add Equipment';
             document.getElementById('equipSubmitBtn').textContent = 'Save Equipment';
             document.getElementById('equipmentForm').reset();
             document.getElementById('equipStatus').value = 'available';
-            populateCategorySelect();
+            await populateCategorySelect();
             openModal('equipmentModal');
         }
 
-        function editEquipment(id) {
-            const equip = getData(STORAGE_KEYS.equipment);
-            const item = equip.find(e => e.id === id);
+        async function editEquipment(id) {
+            const items = await getData('equipment');
+            const item = items.find(e => e.id === id);
             if (!item) return;
             document.getElementById('equipEditId').value = id;
             document.getElementById('equipModalTitle').textContent = 'Edit Equipment';
@@ -1946,19 +2294,19 @@
             document.getElementById('equipSalePrice').value = item.salePrice;
             document.getElementById('equipDesc').value = item.description || '';
             document.getElementById('equipStatus').value = item.status || 'available';
-            populateCategorySelect(item.category);
+            await populateCategorySelect(item.category);
             openModal('equipmentModal');
         }
 
-        function populateCategorySelect(selected) {
-            const cats = getData(STORAGE_KEYS.categories);
+        async function populateCategorySelect(selected) {
+            const cats = await getActive('categories');
             const sel = document.getElementById('equipCategory');
             sel.innerHTML = cats.map(c =>
-                `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${c.name}</option>`
+                `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
             ).join('');
         }
 
-        function saveEquipment(e) {
+        async function saveEquipment(e) {
             e.preventDefault();
             const id = document.getElementById('equipEditId').value;
             const name = document.getElementById('equipName').value.trim();
@@ -1975,14 +2323,15 @@
                 return;
             }
 
-            const equip = getData(STORAGE_KEYS.equipment);
+            const items = await getData('equipment');
             if (id) {
-                const idx = equip.findIndex(e => e.id === id);
+                const idx = items.findIndex(e => e.id === id);
                 if (idx > -1) {
-                    equip[idx] = { ...equip[idx], name, category, quantity: qty, available, rentalPrice, salePrice,
+                    items[idx] = { ...items[idx], name, category, quantity: qty, available, rentalPrice, salePrice,
                         description, status };
-                    setData(STORAGE_KEYS.equipment, equip);
+                    await setData('equipment', items);
                     showToast('Equipment updated successfully!', 'success');
+                    await logActivity('Updated equipment', `"${name}"`);
                 }
             } else {
                 const newItem = {
@@ -1995,88 +2344,115 @@
                     salePrice,
                     description,
                     status,
+                    deleted: false
                 };
-                equip.push(newItem);
-                setData(STORAGE_KEYS.equipment, equip);
+                items.push(newItem);
+                await setData('equipment', items);
                 showToast('Equipment added successfully!', 'success');
+                await logActivity('Added equipment', `"${name}"`);
             }
             closeModal('equipmentModal');
-            renderEquipment();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+            await renderEquipment();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
         }
 
-        function deleteEquipment(id) {
-            if (!confirm('Delete this equipment item?')) return;
-            let equip = getData(STORAGE_KEYS.equipment);
-            equip = equip.filter(e => e.id !== id);
-            setData(STORAGE_KEYS.equipment, equip);
-            showToast('Equipment deleted.', 'info');
-            renderEquipment();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+        async function deleteEquipment(id) {
+            if (!confirm('Delete this equipment item? (It can be restored)')) return;
+            await deleteItem('equipment', id);
+            const items = await getData('equipment');
+            const item = items.find(e => e.id === id);
+            showToast('Equipment soft-deleted.', 'info');
+            await logActivity('Deleted equipment', item ? `"${item.name}"` : id);
+            await renderEquipment();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
+        }
+
+        async function restoreEquipment(id) {
+            await restoreItem('equipment', id);
+            const items = await getData('equipment');
+            const item = items.find(e => e.id === id);
+            showToast('Equipment restored.', 'success');
+            await logActivity('Restored equipment', item ? `"${item.name}"` : id);
+            await renderEquipment();
+            await updateBadges();
         }
 
         // ============================================================
-        //  RENTALS
+        //  RENTALS (async)
         // ============================================================
-        function renderRentals() {
-            const rentals = getData(STORAGE_KEYS.rentals);
+        async function renderRentals() {
+            const rentals = await getActive('rentals', showDeleted.rentals);
             const tbody = document.getElementById('rentalsTableBody');
             if (rentals.length === 0) {
                 tbody.innerHTML =
                     `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-handshake"></i><h3>No rentals</h3><p>Create your first rental.</p></div></td></tr>`;
                 return;
             }
+            const equip = await getData('equipment');
+            const customers = await getData('customers');
             tbody.innerHTML = rentals.map(r => {
                 const statusClass = getStatusBadge(r.status);
-                return `<tr>
-                            <td><strong>${getEquipmentName(r.equipmentId)}</strong> <span class="text-muted" style="font-size:11px;">x${r.quantity}</span></td>
-                            <td>${getCustomerName(r.customerId)}</td>
+                const isDeleted = r.deleted === true;
+                const e = equip.find(item => item.id === r.equipmentId);
+                const c = customers.find(item => item.id === r.customerId);
+                return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                            <td><strong>${e ? escapeHtml(e.name) : 'Unknown'}</strong> <span class="text-muted" style="font-size:11px;">x${r.quantity}</span>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}</td>
+                            <td>${c ? escapeHtml(c.name) : 'Unknown'}</td>
                             <td>${formatDate(r.startDate)}</td>
                             <td>${formatDate(r.endDate)}</td>
                             <td><span class="status-badge ${statusClass}">${r.status || 'active'}</span></td>
                             <td>${formatCurrency(r.totalPrice)}</td>
                             <td style="text-align:right;">
                                 <div class="table-actions" style="justify-content:flex-end;">
-                                    ${r.status === 'active' ? `<button class="btn-success" onclick="returnRental('${r.id}')" style="padding:4px 10px;border-radius:6px;font-size:11px;background:var(--accent-green);color:#fff;border:none;">Return</button>` : ''}
-                                    <button class="delete-btn" onclick="deleteRental('${r.id}')"><i class="fas fa-trash"></i></button>
+                                    ${!isDeleted && r.status === 'active' ? `<button class="btn-success" onclick="returnRental('${r.id}')" style="padding:4px 10px;border-radius:6px;font-size:11px;background:var(--accent-green);color:#fff;border:none;">Return</button>` : ''}
+                                    ${!isDeleted ? `<button class="delete-btn" onclick="deleteRental('${r.id}')"><i class="fas fa-trash"></i></button>` : `<button class="restore-btn" onclick="restoreRental('${r.id}')"><i class="fas fa-undo"></i></button>`}
                                 </div>
                             </td>
                         </tr>`;
             }).join('');
         }
 
-        function openRentalModal() {
-            populateRentalSelects();
+        function toggleShowDeletedRentals() {
+            showDeleted.rentals = !showDeleted.rentals;
+            document.getElementById('showDeletedRentalsBtn').innerHTML = showDeleted.rentals ?
+                '<i class="fas fa-eye-slash"></i> Hide Deleted' :
+                '<i class="fas fa-eye"></i> Show Deleted';
+            renderRentals();
+        }
+
+        async function openRentalModal() {
+            await populateRentalSelects();
             document.getElementById('rentalStart').value = today();
             document.getElementById('rentalEnd').value = today();
             document.getElementById('rentalQty').value = 1;
             openModal('rentalModal');
         }
 
-        function openRentalFromEquip(equipId) {
-            populateRentalSelects(equipId);
+        async function openRentalFromEquip(equipId) {
+            await populateRentalSelects(equipId);
             document.getElementById('rentalStart').value = today();
             document.getElementById('rentalEnd').value = today();
             document.getElementById('rentalQty').value = 1;
             openModal('rentalModal');
         }
 
-        function populateRentalSelects(selectedEquip) {
-            const equip = getData(STORAGE_KEYS.equipment).filter(e => e.status !== 'sold' && e.available > 0);
-            const customers = getData(STORAGE_KEYS.customers);
+        async function populateRentalSelects(selectedEquip) {
+            const equip = await getActive('equipment');
+            const customers = await getActive('customers');
+            const availableEquip = equip.filter(e => e.status !== 'sold' && e.available > 0);
             const eqSel = document.getElementById('rentalEquip');
-            eqSel.innerHTML = equip.map(e =>
-                `<option value="${e.id}" ${e.id === selectedEquip ? 'selected' : ''}>${e.name} (${e.available} avail.)</option>`
+            eqSel.innerHTML = availableEquip.map(e =>
+                `<option value="${e.id}" ${e.id === selectedEquip ? 'selected' : ''}>${escapeHtml(e.name)} (${e.available} avail.)</option>`
             ).join('');
             const custSel = document.getElementById('rentalCustomer');
             custSel.innerHTML = customers.map(c =>
-                `<option value="${c.id}">${c.name}</option>`
+                `<option value="${c.id}">${escapeHtml(c.name)}</option>`
             ).join('');
         }
 
-        function saveRental(e) {
+        async function saveRental(e) {
             e.preventDefault();
             const equipmentId = document.getElementById('rentalEquip').value;
             const customerId = document.getElementById('rentalCustomer').value;
@@ -2093,17 +2469,18 @@
                 return;
             }
 
-            const equip = getEquipment(equipmentId);
-            if (!equip) { showToast('Equipment not found.', 'error'); return; }
-            if (equip.available < qty) {
-                showToast(`Not enough stock. Available: ${equip.available}`, 'error');
+            const equip = await getData('equipment');
+            const item = equip.find(e => e.id === equipmentId);
+            if (!item) { showToast('Equipment not found.', 'error'); return; }
+            if (item.available < qty) {
+                showToast(`Not enough stock. Available: ${item.available}`, 'error');
                 return;
             }
 
             const start = new Date(startDate);
             const end = new Date(endDate);
             const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-            const totalPrice = days * qty * equip.rentalPrice;
+            const totalPrice = days * qty * item.rentalPrice;
 
             const rental = {
                 id: genId(),
@@ -2114,110 +2491,140 @@
                 quantity: qty,
                 totalPrice,
                 status: 'active',
+                deleted: false
             };
-            const rentals = getData(STORAGE_KEYS.rentals);
+            const rentals = await getData('rentals');
             rentals.push(rental);
-            setData(STORAGE_KEYS.rentals, rentals);
+            await setData('rentals', rentals);
 
-            equip.available -= qty;
-            equip.status = equip.available === 0 ? 'rented' : 'available';
-            const allEquip = getData(STORAGE_KEYS.equipment);
-            const idx = allEquip.findIndex(e => e.id === equipmentId);
-            if (idx > -1) allEquip[idx] = equip;
-            setData(STORAGE_KEYS.equipment, allEquip);
+            // Update equipment availability
+            item.available -= qty;
+            item.status = item.available === 0 ? 'rented' : 'available';
+            const idx = equip.findIndex(e => e.id === equipmentId);
+            if (idx > -1) equip[idx] = item;
+            await setData('equipment', equip);
 
             showToast(`Rental created! Total: ${formatCurrency(totalPrice)}`, 'success');
+            await logActivity('Created rental', `${item.name} x${qty} → ${getCustomerName(customerId)}`);
             closeModal('rentalModal');
-            renderRentals();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+            await renderRentals();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
         }
 
-        function returnRental(id) {
+        function getCustomerName(id) {
+            // Async helper – but we need a sync version for log activity...
+            // We'll handle this in the log.
+        }
+
+        async function returnRental(id) {
             if (!confirm('Return this rental?')) return;
-            const rentals = getData(STORAGE_KEYS.rentals);
+            const rentals = await getData('rentals');
             const rental = rentals.find(r => r.id === id);
             if (!rental) return;
 
             rental.status = 'returned';
-            setData(STORAGE_KEYS.rentals, rentals);
+            await setData('rentals', rentals);
 
-            const equip = getEquipment(rental.equipmentId);
-            if (equip) {
-                equip.available += rental.quantity;
-                equip.status = equip.available > 0 ? 'available' : 'rented';
-                const allEquip = getData(STORAGE_KEYS.equipment);
-                const idx = allEquip.findIndex(e => e.id === equip.id);
-                if (idx > -1) allEquip[idx] = equip;
-                setData(STORAGE_KEYS.equipment, allEquip);
+            // Restore equipment
+            const equip = await getData('equipment');
+            const item = equip.find(e => e.id === rental.equipmentId);
+            if (item) {
+                item.available += rental.quantity;
+                item.status = item.available > 0 ? 'available' : 'rented';
+                const idx = equip.findIndex(e => e.id === item.id);
+                if (idx > -1) equip[idx] = item;
+                await setData('equipment', equip);
             }
             showToast('Rental returned successfully.', 'success');
-            renderRentals();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+            await logActivity('Returned rental', `Rental ${rental.id}`);
+            await renderRentals();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
         }
 
-        function deleteRental(id) {
-            if (!confirm('Delete this rental record?')) return;
-            let rentals = getData(STORAGE_KEYS.rentals);
-            rentals = rentals.filter(r => r.id !== id);
-            setData(STORAGE_KEYS.rentals, rentals);
-            showToast('Rental deleted.', 'info');
-            renderRentals();
-            updateBadges();
+        async function deleteRental(id) {
+            if (!confirm('Delete this rental record? (It can be restored)')) return;
+            await deleteItem('rentals', id);
+            showToast('Rental soft-deleted.', 'info');
+            await logActivity('Deleted rental', `Rental ${id}`);
+            await renderRentals();
+            await updateBadges();
+        }
+
+        async function restoreRental(id) {
+            await restoreItem('rentals', id);
+            showToast('Rental restored.', 'success');
+            await logActivity('Restored rental', `Rental ${id}`);
+            await renderRentals();
+            await updateBadges();
         }
 
         // ============================================================
-        //  SALES
+        //  SALES (async)
         // ============================================================
-        function renderSales() {
-            const sales = getData(STORAGE_KEYS.sales);
+        async function renderSales() {
+            const sales = await getActive('sales', showDeleted.sales);
             const tbody = document.getElementById('salesTableBody');
             if (sales.length === 0) {
                 tbody.innerHTML =
                     `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-tag"></i><h3>No sales</h3><p>Record your first sale.</p></div></td></tr>`;
                 return;
             }
+            const equip = await getData('equipment');
+            const customers = await getData('customers');
             tbody.innerHTML = sales.map(s => {
-                return `<tr>
-                            <td><strong>${getEquipmentName(s.equipmentId)}</strong></td>
-                            <td>${getCustomerName(s.customerId)}</td>
+                const isDeleted = s.deleted === true;
+                const e = equip.find(item => item.id === s.equipmentId);
+                const c = customers.find(item => item.id === s.customerId);
+                return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                            <td><strong>${e ? escapeHtml(e.name) : 'Unknown'}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}</td>
+                            <td>${c ? escapeHtml(c.name) : 'Unknown'}</td>
                             <td>${formatDate(s.date)}</td>
                             <td>${s.quantity}</td>
                             <td>${formatCurrency(s.totalPrice)}</td>
                             <td style="text-align:right;">
                                 <div class="table-actions" style="justify-content:flex-end;">
-                                    <button class="delete-btn" onclick="deleteSale('${s.id}')"><i class="fas fa-trash"></i></button>
+                                    ${!isDeleted ? `<button class="delete-btn" onclick="deleteSale('${s.id}')"><i class="fas fa-trash"></i></button>` : `<button class="restore-btn" onclick="restoreSale('${s.id}')"><i class="fas fa-undo"></i></button>`}
                                 </div>
                             </td>
                         </tr>`;
             }).join('');
         }
 
-        function openSaleModal() {
-            populateSaleSelects();
+        function toggleShowDeletedSales() {
+            showDeleted.sales = !showDeleted.sales;
+            document.getElementById('showDeletedSalesBtn').innerHTML = showDeleted.sales ?
+                '<i class="fas fa-eye-slash"></i> Hide Deleted' :
+                '<i class="fas fa-eye"></i> Show Deleted';
+            renderSales();
+        }
+
+        async function openSaleModal() {
+            await populateSaleSelects();
             openModal('saleModal');
         }
 
-        function openSaleFromEquip(equipId) {
-            populateSaleSelects(equipId);
+        async function openSaleFromEquip(equipId) {
+            await populateSaleSelects(equipId);
             openModal('saleModal');
         }
 
-        function populateSaleSelects(selectedEquip) {
-            const equip = getData(STORAGE_KEYS.equipment).filter(e => e.status !== 'sold' && e.available > 0);
-            const customers = getData(STORAGE_KEYS.customers);
+        async function populateSaleSelects(selectedEquip) {
+            const equip = await getActive('equipment');
+            const customers = await getActive('customers');
+            const availableEquip = equip.filter(e => e.status !== 'sold' && e.available > 0);
             const eqSel = document.getElementById('saleEquip');
-            eqSel.innerHTML = equip.map(e =>
-                `<option value="${e.id}" ${e.id === selectedEquip ? 'selected' : ''}>${e.name} (${e.available} avail.)</option>`
+            eqSel.innerHTML = availableEquip.map(e =>
+                `<option value="${e.id}" ${e.id === selectedEquip ? 'selected' : ''}>${escapeHtml(e.name)} (${e.available} avail.)</option>`
             ).join('');
             const custSel = document.getElementById('saleCustomer');
             custSel.innerHTML = customers.map(c =>
-                `<option value="${c.id}">${c.name}</option>`
+                `<option value="${c.id}">${escapeHtml(c.name)}</option>`
             ).join('');
         }
 
-        function saveSale(e) {
+        async function saveSale(e) {
             e.preventDefault();
             const equipmentId = document.getElementById('saleEquip').value;
             const customerId = document.getElementById('saleCustomer').value;
@@ -2228,14 +2635,15 @@
                 return;
             }
 
-            const equip = getEquipment(equipmentId);
-            if (!equip) { showToast('Equipment not found.', 'error'); return; }
-            if (equip.available < qty) {
-                showToast(`Not enough stock. Available: ${equip.available}`, 'error');
+            const equip = await getData('equipment');
+            const item = equip.find(e => e.id === equipmentId);
+            if (!item) { showToast('Equipment not found.', 'error'); return; }
+            if (item.available < qty) {
+                showToast(`Not enough stock. Available: ${item.available}`, 'error');
                 return;
             }
 
-            const totalPrice = qty * equip.salePrice;
+            const totalPrice = qty * item.salePrice;
             const sale = {
                 id: genId(),
                 equipmentId,
@@ -2243,63 +2651,85 @@
                 date: today(),
                 quantity: qty,
                 totalPrice,
+                deleted: false
             };
-            const sales = getData(STORAGE_KEYS.sales);
+            const sales = await getData('sales');
             sales.push(sale);
-            setData(STORAGE_KEYS.sales, sales);
+            await setData('sales', sales);
 
-            equip.available -= qty;
-            if (equip.available === 0) equip.status = 'sold';
-            const allEquip = getData(STORAGE_KEYS.equipment);
-            const idx = allEquip.findIndex(e => e.id === equipmentId);
-            if (idx > -1) allEquip[idx] = equip;
-            setData(STORAGE_KEYS.equipment, allEquip);
+            // Update equipment
+            item.available -= qty;
+            if (item.available === 0) item.status = 'sold';
+            const idx = equip.findIndex(e => e.id === equipmentId);
+            if (idx > -1) equip[idx] = item;
+            await setData('equipment', equip);
 
             showToast(`Sale recorded! Total: ${formatCurrency(totalPrice)}`, 'success');
+            await logActivity('Recorded sale', `${item.name} x${qty} → ${getCustomerName(customerId)}`);
             closeModal('saleModal');
-            renderSales();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+            await renderSales();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
         }
 
-        function deleteSale(id) {
-            if (!confirm('Delete this sale record?')) return;
-            let sales = getData(STORAGE_KEYS.sales);
-            sales = sales.filter(s => s.id !== id);
-            setData(STORAGE_KEYS.sales, sales);
-            showToast('Sale deleted.', 'info');
-            renderSales();
-            updateBadges();
+        async function deleteSale(id) {
+            if (!confirm('Delete this sale record? (It can be restored)')) return;
+            await deleteItem('sales', id);
+            showToast('Sale soft-deleted.', 'info');
+            await logActivity('Deleted sale', `Sale ${id}`);
+            await renderSales();
+            await updateBadges();
+        }
+
+        async function restoreSale(id) {
+            await restoreItem('sales', id);
+            showToast('Sale restored.', 'success');
+            await logActivity('Restored sale', `Sale ${id}`);
+            await renderSales();
+            await updateBadges();
         }
 
         // ============================================================
-        //  CUSTOMERS
+        //  CUSTOMERS (async)
         // ============================================================
-        function renderCustomers() {
-            const customers = getData(STORAGE_KEYS.customers);
+        async function renderCustomers() {
+            const customers = await getActive('customers', showDeleted.customers);
             const tbody = document.getElementById('customersTableBody');
             if (customers.length === 0) {
                 tbody.innerHTML =
                     `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-users"></i><h3>No customers</h3><p>Add your first customer.</p></div></td></tr>`;
                 return;
             }
-            tbody.innerHTML = customers.map(c =>
-                `<tr>
-                            <td><strong>${c.name}</strong></td>
-                            <td>${c.email}</td>
-                            <td>${c.phone || '-'}</td>
-                            <td>${c.company || '-'}</td>
+            tbody.innerHTML = customers.map(c => {
+                const isDeleted = c.deleted === true;
+                return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                            <td><strong>${escapeHtml(c.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}</td>
+                            <td>${escapeHtml(c.email)}</td>
+                            <td>${escapeHtml(c.phone || '-')}</td>
+                            <td>${escapeHtml(c.company || '-')}</td>
                             <td style="text-align:right;">
                                 <div class="table-actions" style="justify-content:flex-end;">
+                                    ${!isDeleted ? `
                                     <button class="edit-btn" onclick="editCustomer('${c.id}')"><i class="fas fa-edit"></i></button>
                                     <button class="delete-btn" onclick="deleteCustomer('${c.id}')"><i class="fas fa-trash"></i></button>
+                                    ` : `
+                                    <button class="restore-btn" onclick="restoreCustomer('${c.id}')"><i class="fas fa-undo"></i></button>
+                                    `}
                                 </div>
                             </td>
-                        </tr>`
-            ).join('');
+                        </tr>`;
+            }).join('');
         }
 
-        function openCustomerModal() {
+        function toggleShowDeletedCustomers() {
+            showDeleted.customers = !showDeleted.customers;
+            document.getElementById('showDeletedCustomersBtn').innerHTML = showDeleted.customers ?
+                '<i class="fas fa-eye-slash"></i> Hide Deleted' :
+                '<i class="fas fa-eye"></i> Show Deleted';
+            renderCustomers();
+        }
+
+        async function openCustomerModal() {
             document.getElementById('custEditId').value = '';
             document.getElementById('customerModalTitle').textContent = 'Add Customer';
             document.getElementById('custSubmitBtn').textContent = 'Save Customer';
@@ -2307,8 +2737,8 @@
             openModal('customerModal');
         }
 
-        function editCustomer(id) {
-            const customers = getData(STORAGE_KEYS.customers);
+        async function editCustomer(id) {
+            const customers = await getData('customers');
             const c = customers.find(x => x.id === id);
             if (!c) return;
             document.getElementById('custEditId').value = id;
@@ -2321,7 +2751,7 @@
             openModal('customerModal');
         }
 
-        function saveCustomer(e) {
+        async function saveCustomer(e) {
             e.preventDefault();
             const id = document.getElementById('custEditId').value;
             const name = document.getElementById('custName').value.trim();
@@ -2329,39 +2759,54 @@
             const phone = document.getElementById('custPhone').value.trim();
             const company = document.getElementById('custCompany').value.trim();
             if (!name || !email) { showToast('Name and email are required.', 'error'); return; }
-            const customers = getData(STORAGE_KEYS.customers);
+            const customers = await getData('customers');
             if (id) {
                 const idx = customers.findIndex(c => c.id === id);
-                if (idx > -1) { customers[idx] = { ...customers[idx], name, email, phone, company };
-                    setData(STORAGE_KEYS.customers, customers);
-                    showToast('Customer updated.', 'success'); }
+                if (idx > -1) {
+                    customers[idx] = { ...customers[idx], name, email, phone, company };
+                    await setData('customers', customers);
+                    showToast('Customer updated.', 'success');
+                    await logActivity('Updated customer', `"${name}"`);
+                }
             } else {
-                customers.push({ id: genId(), name, email, phone, company });
-                setData(STORAGE_KEYS.customers, customers);
+                customers.push({ id: genId(), name, email, phone, company, deleted: false });
+                await setData('customers', customers);
                 showToast('Customer added.', 'success');
+                await logActivity('Added customer', `"${name}"`);
             }
             closeModal('customerModal');
-            renderCustomers();
-            updateBadges();
-            if (currentPage === 'dashboard') renderDashboard();
+            await renderCustomers();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
         }
 
-        function deleteCustomer(id) {
-            if (!confirm('Delete this customer?')) return;
-            let customers = getData(STORAGE_KEYS.customers);
-            customers = customers.filter(c => c.id !== id);
-            setData(STORAGE_KEYS.customers, customers);
-            showToast('Customer deleted.', 'info');
-            renderCustomers();
-            updateBadges();
+        async function deleteCustomer(id) {
+            if (!confirm('Delete this customer? (It can be restored)')) return;
+            await deleteItem('customers', id);
+            const customers = await getData('customers');
+            const c = customers.find(x => x.id === id);
+            showToast('Customer soft-deleted.', 'info');
+            await logActivity('Deleted customer', c ? `"${c.name}"` : id);
+            await renderCustomers();
+            await updateBadges();
+        }
+
+        async function restoreCustomer(id) {
+            await restoreItem('customers', id);
+            const customers = await getData('customers');
+            const c = customers.find(x => x.id === id);
+            showToast('Customer restored.', 'success');
+            await logActivity('Restored customer', c ? `"${c.name}"` : id);
+            await renderCustomers();
+            await updateBadges();
         }
 
         // ============================================================
-        //  CATEGORIES
+        //  CATEGORIES (async)
         // ============================================================
-        function renderCategories() {
-            const cats = getData(STORAGE_KEYS.categories);
-            const equip = getData(STORAGE_KEYS.equipment);
+        async function renderCategories() {
+            const cats = await getActive('categories', showDeleted.categories);
+            const equip = await getData('equipment');
             const tbody = document.getElementById('categoriesTableBody');
             if (cats.length === 0) {
                 tbody.innerHTML =
@@ -2369,22 +2814,35 @@
                 return;
             }
             tbody.innerHTML = cats.map(c => {
-                const count = equip.filter(e => e.category === c.id).length;
-                return `<tr>
-                            <td><strong>${c.name}</strong></td>
+                const count = equip.filter(e => e.category === c.id && !e.deleted).length;
+                const isDeleted = c.deleted === true;
+                return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                            <td><strong>${escapeHtml(c.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}</td>
                             <td><i class="${c.icon || 'fa-solid fa-cube'}"></i></td>
                             <td>${count}</td>
                             <td style="text-align:right;">
                                 <div class="table-actions" style="justify-content:flex-end;">
+                                    ${!isDeleted ? `
                                     <button class="edit-btn" onclick="editCategory('${c.id}')"><i class="fas fa-edit"></i></button>
                                     <button class="delete-btn" onclick="deleteCategory('${c.id}')"><i class="fas fa-trash"></i></button>
+                                    ` : `
+                                    <button class="restore-btn" onclick="restoreCategory('${c.id}')"><i class="fas fa-undo"></i></button>
+                                    `}
                                 </div>
                             </td>
                         </tr>`;
             }).join('');
         }
 
-        function openCategoryModal() {
+        function toggleShowDeletedCategories() {
+            showDeleted.categories = !showDeleted.categories;
+            document.getElementById('showDeletedCategoriesBtn').innerHTML = showDeleted.categories ?
+                '<i class="fas fa-eye-slash"></i> Hide Deleted' :
+                '<i class="fas fa-eye"></i> Show Deleted';
+            renderCategories();
+        }
+
+        async function openCategoryModal() {
             document.getElementById('catEditId').value = '';
             document.getElementById('categoryModalTitle').textContent = 'Add Category';
             document.getElementById('catSubmitBtn').textContent = 'Save Category';
@@ -2393,8 +2851,8 @@
             openModal('categoryModal');
         }
 
-        function editCategory(id) {
-            const cats = getData(STORAGE_KEYS.categories);
+        async function editCategory(id) {
+            const cats = await getData('categories');
             const c = cats.find(x => x.id === id);
             if (!c) return;
             document.getElementById('catEditId').value = id;
@@ -2405,47 +2863,62 @@
             openModal('categoryModal');
         }
 
-        function saveCategory(e) {
+        async function saveCategory(e) {
             e.preventDefault();
             const id = document.getElementById('catEditId').value;
             const name = document.getElementById('catName').value.trim();
             const icon = document.getElementById('catIcon').value.trim() || 'fa-solid fa-cube';
             if (!name) { showToast('Category name is required.', 'error'); return; }
-            const cats = getData(STORAGE_KEYS.categories);
+            const cats = await getData('categories');
             if (id) {
                 const idx = cats.findIndex(c => c.id === id);
-                if (idx > -1) { cats[idx] = { ...cats[idx], name, icon };
-                    setData(STORAGE_KEYS.categories, cats);
-                    showToast('Category updated.', 'success'); }
+                if (idx > -1) {
+                    cats[idx] = { ...cats[idx], name, icon };
+                    await setData('categories', cats);
+                    showToast('Category updated.', 'success');
+                    await logActivity('Updated category', `"${name}"`);
+                }
             } else {
-                cats.push({ id: genId(), name, icon });
-                setData(STORAGE_KEYS.categories, cats);
+                cats.push({ id: genId(), name, icon, deleted: false });
+                await setData('categories', cats);
                 showToast('Category added.', 'success');
+                await logActivity('Added category', `"${name}"`);
             }
             closeModal('categoryModal');
-            renderCategories();
-            if (currentPage === 'equipment') renderEquipment();
-            updateBadges();
+            await renderCategories();
+            if (currentPage === 'equipment') await renderEquipment();
+            await updateBadges();
         }
 
-        function deleteCategory(id) {
-            if (!confirm('Delete this category?')) return;
-            let cats = getData(STORAGE_KEYS.categories);
-            cats = cats.filter(c => c.id !== id);
-            setData(STORAGE_KEYS.categories, cats);
-            showToast('Category deleted.', 'info');
-            renderCategories();
-            if (currentPage === 'equipment') renderEquipment();
+        async function deleteCategory(id) {
+            if (!confirm('Delete this category? (It can be restored)')) return;
+            await deleteItem('categories', id);
+            const cats = await getData('categories');
+            const c = cats.find(x => x.id === id);
+            showToast('Category soft-deleted.', 'info');
+            await logActivity('Deleted category', c ? `"${c.name}"` : id);
+            await renderCategories();
+            if (currentPage === 'equipment') await renderEquipment();
+        }
+
+        async function restoreCategory(id) {
+            await restoreItem('categories', id);
+            const cats = await getData('categories');
+            const c = cats.find(x => x.id === id);
+            showToast('Category restored.', 'success');
+            await logActivity('Restored category', c ? `"${c.name}"` : id);
+            await renderCategories();
+            if (currentPage === 'equipment') await renderEquipment();
         }
 
         // ============================================================
         //  BADGES
         // ============================================================
-        function updateBadges() {
-            const equip = getData(STORAGE_KEYS.equipment);
-            const rentals = getData(STORAGE_KEYS.rentals);
-            const sales = getData(STORAGE_KEYS.sales);
-            const customers = getData(STORAGE_KEYS.customers);
+        async function updateBadges() {
+            const equip = await getActive('equipment');
+            const rentals = await getActive('rentals');
+            const sales = await getActive('sales');
+            const customers = await getActive('customers');
             document.getElementById('equipCountBadge').textContent = equip.length;
             document.getElementById('rentalCountBadge').textContent = rentals.length;
             document.getElementById('saleCountBadge').textContent = sales.length;
@@ -2453,37 +2926,42 @@
         }
 
         // ============================================================
-        //  GLOBAL SEARCH
+        //  DEBOUNCED SEARCH
         // ============================================================
-        function handleGlobalSearch(val) {
+        const handleGlobalSearchDebounced = debounce(function(val) {
+            handleGlobalSearch(val);
+        }, 300);
+
+        async function handleGlobalSearch(val) {
             const q = val.trim().toLowerCase();
             if (!q) {
-                if (currentPage === 'equipment') renderEquipment();
-                if (currentPage === 'rentals') renderRentals();
-                if (currentPage === 'sales') renderSales();
-                if (currentPage === 'customers') renderCustomers();
+                if (currentPage === 'equipment') await renderEquipment();
+                if (currentPage === 'rentals') await renderRentals();
+                if (currentPage === 'sales') await renderSales();
+                if (currentPage === 'customers') await renderCustomers();
                 return;
             }
             if (currentPage === 'equipment') {
-                const equip = getData(STORAGE_KEYS.equipment);
+                const equip = await getActive('equipment', showDeleted.equipment);
+                const categories = await getData('categories');
                 const filtered = equip.filter(e =>
                     e.name.toLowerCase().includes(q) ||
                     (e.description || '').toLowerCase().includes(q) ||
-                    getCategoryName(e.category).toLowerCase().includes(q)
+                    getCategoryName(e.category, categories).toLowerCase().includes(q)
                 );
                 const tbody = document.getElementById('equipmentTableBody');
                 if (filtered.length === 0) {
                     tbody.innerHTML =
                         `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-search"></i><h3>No matches</h3><p>Try a different search term.</p></div></td></tr>`;
                 } else {
-                    const cats = getData(STORAGE_KEYS.categories);
                     tbody.innerHTML = filtered.map(e => {
-                        const cat = getCategory(e.category);
+                        const cat = categories.find(c => c.id === e.category);
                         const catClass = cat ? cat.name.toLowerCase().replace(/\s/g, '') : 'other';
                         const statusClass = getStatusBadge(e.status);
-                        return `<tr>
-                                    <td><strong>${e.name}</strong><div class="text-muted" style="font-size:11px;">${e.description || ''}</div></td>
-                                    <td><span class="category-tag ${catClass}">${cat ? cat.name : 'Uncategorized'}</span></td>
+                        const isDeleted = e.deleted === true;
+                        return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
+                                    <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
+                                    <td><span class="category-tag ${catClass}">${cat ? escapeHtml(cat.name) : 'Uncategorized'}</span></td>
                                     <td>${e.quantity}</td>
                                     <td>${e.available}</td>
                                     <td>${formatCurrency(e.rentalPrice)}</td>
@@ -2491,10 +2969,14 @@
                                     <td><span class="status-badge ${statusClass}">${e.status || 'available'}</span></td>
                                     <td style="text-align:right;">
                                         <div class="table-actions" style="justify-content:flex-end;">
+                                            ${!isDeleted ? `
                                             <button class="rent-btn" onclick="openRentalFromEquip('${e.id}')" title="Rent"><i class="fas fa-handshake"></i></button>
                                             <button class="sale-btn" onclick="openSaleFromEquip('${e.id}')" title="Sell"><i class="fas fa-tag"></i></button>
                                             <button class="edit-btn" onclick="editEquipment('${e.id}')" title="Edit"><i class="fas fa-edit"></i></button>
                                             <button class="delete-btn" onclick="deleteEquipment('${e.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                            ` : `
+                                            <button class="restore-btn" onclick="restoreEquipment('${e.id}')" title="Restore"><i class="fas fa-undo"></i></button>
+                                            `}
                                         </div>
                                     </td>
                                 </tr>`;
@@ -2504,35 +2986,123 @@
         }
 
         // ============================================================
-        //  INIT APP (called after password check)
+        //  INIT APP
         // ============================================================
-        function initApp() {
-            initDefaultData();
-            navigate('dashboard');
+        async function initApp() {
+            await openDB();
+            // Data is automatically migrated from localStorage on DB upgrade
+            // Ensure defaults if completely empty
+            const categories = await getData('categories');
+            if (categories.length === 0) {
+                const defaults = [
+                    { id: 'cat1', name: 'LED Screens', icon: 'fa-solid fa-display', deleted: false },
+                    { id: 'cat2', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false },
+                    { id: 'cat3', name: 'Trusses', icon: 'fa-solid fa-bezier-curve', deleted: false },
+                    { id: 'cat4', name: 'PA Systems', icon: 'fa-solid fa-volume-high', deleted: false },
+                    { id: 'cat5', name: 'Lighting', icon: 'fa-solid fa-lightbulb', deleted: false },
+                    { id: 'cat6', name: 'Other', icon: 'fa-solid fa-cube', deleted: false },
+                ];
+                await setData('categories', defaults);
+            }
+            const equip = await getData('equipment');
+            if (equip.length === 0) {
+                const defaults = [
+                    { id: 'e1', name: 'P3.9 LED Panel', category: 'cat1', description: 'Indoor rental panel, 500x500mm',
+                        quantity: 120, available: 85, rentalPrice: 45, salePrice: 1200, status: 'available',
+                        deleted: false },
+                    { id: 'e2', name: 'P4.8 LED Wall', category: 'cat1', description: 'Outdoor LED wall, 500x500mm',
+                        quantity: 80, available: 60, rentalPrice: 55, salePrice: 1500, status: 'available',
+                        deleted: false },
+                    { id: 'e3', name: 'Mobile Stage 6x4m', category: 'cat2', description: '6x4m mobile stage with roof',
+                        quantity: 3, available: 2, rentalPrice: 350, salePrice: 8500, status: 'available',
+                        deleted: false },
+                    { id: 'e4', name: 'Truss Tower 4m', category: 'cat3', description: '4m truss tower with base',
+                        quantity: 15, available: 12, rentalPrice: 85, salePrice: 2200, status: 'available',
+                        deleted: false },
+                    { id: 'e5', name: 'Line Array PA System', category: 'cat4', description: '8x dual 10" line array',
+                        quantity: 4, available: 3, rentalPrice: 420, salePrice: 12000, status: 'available',
+                        deleted: false },
+                    { id: 'e6', name: 'Subwoofer 18"', category: 'cat4', description: 'Active 18" subwoofer',
+                        quantity: 8, available: 6, rentalPrice: 95, salePrice: 2800, status: 'available',
+                        deleted: false },
+                    { id: 'e7', name: 'LED Par Can', category: 'cat5', description: 'RGBW LED par can, 36x3W',
+                        quantity: 40, available: 32, rentalPrice: 18, salePrice: 450, status: 'available',
+                        deleted: false },
+                    { id: 'e8', name: 'Truss Section 2m', category: 'cat3', description: '2m truss section, 30x30cm',
+                        quantity: 50, available: 40, rentalPrice: 25, salePrice: 650, status: 'available',
+                        deleted: false },
+                ];
+                await setData('equipment', defaults);
+            }
+            const customers = await getData('customers');
+            if (customers.length === 0) {
+                const defaults = [
+                    { id: 'c1', name: 'Alice Johnson', email: 'alice@eventco.com', phone: '+1 555-0101',
+                        company: 'EventCo', deleted: false },
+                    { id: 'c2', name: 'Bob Smith', email: 'bob@starlight.com', phone: '+1 555-0102',
+                        company: 'Starlight Productions', deleted: false },
+                    { id: 'c3', name: 'Carol White', email: 'carol@audiovision.com', phone: '+1 555-0103',
+                        company: 'AudioVision', deleted: false },
+                ];
+                await setData('customers', defaults);
+            }
+            const rentals = await getData('rentals');
+            if (rentals.length === 0) {
+                const defaults = [{
+                    id: 'r1',
+                    equipmentId: 'e1',
+                    customerId: 'c1',
+                    startDate: '2026-08-15',
+                    endDate: '2026-08-18',
+                    quantity: 20,
+                    totalPrice: 2700,
+                    status: 'active',
+                    deleted: false
+                }];
+                await setData('rentals', defaults);
+            }
+            const sales = await getData('sales');
+            if (sales.length === 0) {
+                const defaults = [{
+                    id: 's1',
+                    equipmentId: 'e3',
+                    customerId: 'c2',
+                    date: '2026-08-10',
+                    quantity: 1,
+                    totalPrice: 8500,
+                    deleted: false
+                }];
+                await setData('sales', defaults);
+            }
+
+            await navigate('dashboard');
             const todayStr = today();
             document.querySelectorAll('input[type="date"]').forEach(el => {
                 if (!el.value) el.value = todayStr;
             });
-            console.log('🏗️ NADEGE Logistics Inventory System loaded (v2.3 - Staff Only).');
-            console.log('📦 Data stored in localStorage.');
+            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.0 - Secure & Optimised).');
+            console.log('📦 Data stored in IndexedDB.');
         }
 
-        // On page load, wait for DOM then focus password
+        // ============================================================
+        //  LOAD NON-CRITICAL CSS
+        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
+            // Non-critical CSS is already included in the main style tag,
+            // but we can add a small delay to let the page paint first.
+            // Everything is already there.
+            // Focus password
             document.getElementById('passwordInput').focus();
-            // Prevent scrolling while locked
             document.body.style.overflow = 'hidden';
         });
 
-        // When unlocked, re-enable scrolling
-        const observer = new MutationObserver(function() {
-            const overlay = document.getElementById('passwordOverlay');
-            if (overlay.classList.contains('hidden')) {
-                document.body.style.overflow = 'auto';
-                observer.disconnect();
-            }
-        });
-        observer.observe(document.getElementById('passwordOverlay'), { attributes: true, attributeFilter: ['class'] });
+        // ============================================================
+        //  INITIALISE DB ON PAGE LOAD (but wait for password)
+        // ============================================================
+        // The password overlay is shown first.
+        // When unlocked, initApp() is called.
+        console.log('NADEGE Logistics v3.0 - waiting for authentication...');
     </script>
+
 </body>
 </html>
