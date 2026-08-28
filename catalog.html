@@ -318,8 +318,10 @@
     <script>
         AOS.init({ once: true, offset: 40, duration: 600, easing: 'ease-out' });
 
+        // ============================================================
+        //  INDEXEDDB – same as inventory
+        // ============================================================
         const DB_NAME = 'NadegeInventoryDB';
-        const STORES = ['equipment', 'categories'];
 
         function openDB() {
             return new Promise((resolve, reject) => {
@@ -366,7 +368,6 @@
             const equipment = await getData('equipment');
             const categories = await getData('categories');
 
-            // Filter out deleted items
             const activeEquip = equipment.filter(e => !e.deleted);
             const filtered = filter === 'all' ? activeEquip : activeEquip.filter(e => e.category === filter);
 
