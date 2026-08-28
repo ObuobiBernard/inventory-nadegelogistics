@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Inventory Management</title>
 
-    <!-- ===== CSP (Content Security Policy) ===== -->
+    <!-- ===== CSP (Content Security Policy) – ✅ FIXED ===== -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com;
         font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
         img-src 'self' data:;
-        connect-src 'self' https://script.google.com;
+        connect-src 'self' https://script.google.com https://script.googleusercontent.com;
         base-uri 'self';
     " />
 
@@ -1067,7 +1067,7 @@
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v3.1 · Fully Fixed
+            v3.2 · CSP Fixed
         </div>
     </aside>
 
@@ -1325,7 +1325,7 @@
 
     <!-- ===== MODALS ===== -->
 
-    <!-- Settings Modal (✅ FIX: onsubmit calls handleSettingsSubmit) -->
+    <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <div class="modal-header">
@@ -2033,7 +2033,7 @@
         }
 
         // ============================================================
-        //  SETTINGS – ✅ FIX: renamed to handleSettingsSubmit
+        //  SETTINGS
         // ============================================================
         async function openSettingsModal() {
             const settings = await getSettings();
@@ -2050,7 +2050,7 @@
                 showToast('Please fill in both fields.', 'error');
                 return;
             }
-            await saveSettings({ url, secret }); // now correctly calls the storage function
+            await saveSettings({ url, secret });
             closeModal('settingsModal');
             showToast('Settings saved successfully!', 'success');
             await logActivity('Settings updated', 'Sync settings changed');
@@ -2157,7 +2157,7 @@
         }
 
         // ============================================================
-        //  EQUIPMENT – ✅ FIX: Rent/Sell buttons check stock
+        //  EQUIPMENT
         // ============================================================
         async function renderEquipment() {
             const equip = await getActive('equipment', showDeleted.equipment);
@@ -2333,7 +2333,7 @@
         }
 
         // ============================================================
-        //  RENTALS – ✅ FIX: stock check in openRentalFromEquip
+        //  RENTALS
         // ============================================================
         async function renderRentals() {
             const rentals = await getActive('rentals', showDeleted.rentals);
@@ -2515,7 +2515,7 @@
         }
 
         // ============================================================
-        //  SALES – ✅ FIX: stock check in openSaleFromEquip
+        //  SALES
         // ============================================================
         async function renderSales() {
             const sales = await getActive('sales', showDeleted.sales);
@@ -3043,7 +3043,7 @@
             document.querySelectorAll('input[type="date"]').forEach(el => {
                 if (!el.value) el.value = todayStr;
             });
-            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.1 - Fully Fixed).');
+            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.2 - CSP Fixed).');
             console.log('📦 Data stored in IndexedDB.');
         }
 
@@ -3054,7 +3054,7 @@
             document.getElementById('passwordInput').focus();
             document.body.style.overflow = 'hidden';
         });
-        console.log('NADEGE Logistics v3.1 - waiting for authentication...');
+        console.log('NADEGE Logistics v3.2 - waiting for authentication...');
     </script>
 </body>
 </html>
