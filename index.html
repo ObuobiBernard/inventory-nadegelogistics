@@ -47,6 +47,7 @@
             display: flex;
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
         a {
             color: inherit;
@@ -82,6 +83,79 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: var(--accent-gold);
+        }
+
+        /* ===== PASSWORD OVERLAY ===== */
+        .password-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(11, 14, 20, 0.95);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        .password-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .password-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 40px 48px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .password-box img {
+            max-width: 120px;
+            margin-bottom: 20px;
+        }
+        .password-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .password-box p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .password-box .input-group {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+        .password-box .input-group input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 16px;
+            color: var(--text-primary);
+            text-align: center;
+            letter-spacing: 2px;
+            transition: var(--transition);
+        }
+        .password-box .input-group input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px var(--accent-gold-dim);
+        }
+        .password-box .input-group .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .password-box .error-msg {
+            color: var(--accent-red);
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 20px;
         }
 
         /* ===== SIDEBAR ===== */
@@ -858,13 +932,26 @@
 </head>
 <body>
 
+    <!-- ===== PASSWORD OVERLAY ===== -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <img src="nadege logo.jpg" alt="NADEGE Logistics" />
+            <h2>Staff Access</h2>
+            <p>Enter the password to access the inventory system.</p>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Enter password" autofocus />
+                <button class="btn btn-primary" id="passwordSubmit">Unlock</button>
+                <div class="error-msg" id="passwordError"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <!-- Logo image – make sure the file exists in your repo -->
             <img src="nadege logo.jpg" alt="NADEGE Logistics" />
             <div class="brand-text">
                 <span>NADEGE Logistics</span>
@@ -895,7 +982,7 @@
             <a class="nav-item" data-page="categories" onclick="navigate('categories')">
                 <i class="fas fa-tags"></i> Categories
             </a>
-            <!-- Catalog link -->
+            <!-- Catalog link (opens in new tab) -->
             <a class="nav-item catalog-link" href="catalog.html" target="_blank">
                 <i class="fas fa-store"></i> View Catalog
                 <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">📤</span>
@@ -903,12 +990,12 @@
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v2.2 · CORS fix
+            v2.3 · Staff Only
         </div>
     </aside>
 
     <!-- ===== MAIN ===== -->
-    <main class="main">
+    <main class="main" id="mainContent">
         <!-- Top Bar -->
         <div class="topbar">
             <div style="display:flex;align-items:center;gap:14px;">
@@ -1368,6 +1455,40 @@
 
     <script>
         // ============================================================
+        //  PASSWORD PROTECTION
+        // ============================================================
+        const STAFF_PASSWORD = 'nadege2025'; // 🔑 Change this to your own password
+
+        function checkPassword() {
+            const overlay = document.getElementById('passwordOverlay');
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('passwordError');
+            const entered = input.value.trim();
+
+            if (entered === STAFF_PASSWORD) {
+                overlay.classList.add('hidden');
+                // Focus on the main content
+                document.getElementById('mainContent').style.opacity = '1';
+                // Initialize the app after login
+                initApp();
+            } else {
+                error.textContent = '❌ Incorrect password. Please try again.';
+                input.value = '';
+                input.focus();
+                setTimeout(() => { error.textContent = ''; }, 3000);
+            }
+        }
+
+        // Enter key support
+        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        document.getElementById('passwordSubmit').addEventListener('click', checkPassword);
+
+        // ============================================================
         //  DATA LAYER
         // ============================================================
         const STORAGE_KEYS = {
@@ -1568,7 +1689,6 @@
             syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
 
             try {
-                // Build the payload
                 const payload = {
                     secret: settings.secret,
                     equipment: getData(STORAGE_KEYS.equipment),
@@ -1578,7 +1698,6 @@
                     categories: getData(STORAGE_KEYS.categories),
                 };
 
-                // Send as form-urlencoded to avoid CORS preflight
                 const formData = new URLSearchParams();
                 formData.append('data', JSON.stringify(payload));
 
@@ -1635,17 +1754,14 @@
 
         function navigate(page) {
             currentPage = page;
-            // hide all
             document.querySelectorAll('.page-content').forEach(el => el.style.display = 'none');
             const target = document.getElementById('page-' + page);
             if (target) target.style.display = 'block';
 
-            // update nav
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
             if (navItem) navItem.classList.add('active');
 
-            // update title
             const titles = {
                 dashboard: 'Dashboard <small>Overview</small>',
                 equipment: 'Equipment <small>Inventory</small>',
@@ -1656,10 +1772,8 @@
             };
             document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
 
-            // close mobile sidebar
             closeSidebar();
 
-            // render
             if (page === 'dashboard') renderDashboard();
             if (page === 'equipment') renderEquipment();
             if (page === 'rentals') renderRentals();
@@ -1698,7 +1812,6 @@
         function closeModal(id) {
             document.getElementById(id).classList.remove('open');
         }
-        // close on overlay click
         document.querySelectorAll('.modal-overlay').forEach(el => {
             el.addEventListener('click', function(e) {
                 if (e.target === this) this.classList.remove('open');
@@ -1724,7 +1837,6 @@
             document.getElementById('statActiveRentals').textContent = activeRentals;
             document.getElementById('statCustomers').textContent = customers.length;
 
-            // Recent activity: combine rentals + sales
             const activities = [];
             rentals.forEach(r => {
                 const eName = getEquipmentName(r.equipmentId);
@@ -1770,7 +1882,6 @@
             const equip = getData(STORAGE_KEYS.equipment);
             const filter = document.getElementById('categoryFilter').value;
 
-            // populate category filter
             const cats = getData(STORAGE_KEYS.categories);
             const filterEl = document.getElementById('categoryFilter');
             const currentVal = filterEl.value;
@@ -1989,7 +2100,6 @@
                 return;
             }
 
-            // calculate total: days * qty * daily price
             const start = new Date(startDate);
             const end = new Date(endDate);
             const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
@@ -2009,7 +2119,6 @@
             rentals.push(rental);
             setData(STORAGE_KEYS.rentals, rentals);
 
-            // update equipment availability
             equip.available -= qty;
             equip.status = equip.available === 0 ? 'rented' : 'available';
             const allEquip = getData(STORAGE_KEYS.equipment);
@@ -2033,7 +2142,6 @@
             rental.status = 'returned';
             setData(STORAGE_KEYS.rentals, rentals);
 
-            // restore equipment availability
             const equip = getEquipment(rental.equipmentId);
             if (equip) {
                 equip.available += rental.quantity;
@@ -2140,7 +2248,6 @@
             sales.push(sale);
             setData(STORAGE_KEYS.sales, sales);
 
-            // update equipment
             equip.available -= qty;
             if (equip.available === 0) equip.status = 'sold';
             const allEquip = getData(STORAGE_KEYS.equipment);
@@ -2317,7 +2424,6 @@
             }
             closeModal('categoryModal');
             renderCategories();
-            // re-render equipment to update category filter / tags
             if (currentPage === 'equipment') renderEquipment();
             updateBadges();
         }
@@ -2352,14 +2458,12 @@
         function handleGlobalSearch(val) {
             const q = val.trim().toLowerCase();
             if (!q) {
-                // just re-render current page
                 if (currentPage === 'equipment') renderEquipment();
                 if (currentPage === 'rentals') renderRentals();
                 if (currentPage === 'sales') renderSales();
                 if (currentPage === 'customers') renderCustomers();
                 return;
             }
-            // search in equipment
             if (currentPage === 'equipment') {
                 const equip = getData(STORAGE_KEYS.equipment);
                 const filtered = equip.filter(e =>
@@ -2372,7 +2476,6 @@
                     tbody.innerHTML =
                         `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-search"></i><h3>No matches</h3><p>Try a different search term.</p></div></td></tr>`;
                 } else {
-                    // re-use render logic but with filtered data
                     const cats = getData(STORAGE_KEYS.categories);
                     tbody.innerHTML = filtered.map(e => {
                         const cat = getCategory(e.category);
@@ -2401,22 +2504,35 @@
         }
 
         // ============================================================
-        //  INIT
+        //  INIT APP (called after password check)
         // ============================================================
-        function init() {
+        function initApp() {
             initDefaultData();
             navigate('dashboard');
-            // set today as default for date inputs
             const todayStr = today();
             document.querySelectorAll('input[type="date"]').forEach(el => {
                 if (!el.value) el.value = todayStr;
             });
+            console.log('🏗️ NADEGE Logistics Inventory System loaded (v2.3 - Staff Only).');
+            console.log('📦 Data stored in localStorage.');
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        // On page load, wait for DOM then focus password
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput').focus();
+            // Prevent scrolling while locked
+            document.body.style.overflow = 'hidden';
+        });
 
-        console.log('🏗️ NADEGE Logistics Inventory System loaded (v2.2 - CORS fix).');
-        console.log('📦 Data stored in localStorage.');
+        // When unlocked, re-enable scrolling
+        const observer = new MutationObserver(function() {
+            const overlay = document.getElementById('passwordOverlay');
+            if (overlay.classList.contains('hidden')) {
+                document.body.style.overflow = 'auto';
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.getElementById('passwordOverlay'), { attributes: true, attributeFilter: ['class'] });
     </script>
 </body>
 </html>
