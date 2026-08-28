@@ -21,15 +21,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Google Font Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-    <!-- lz-string for compression -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 
     <style>
-        /* ===== CRITICAL CSS (above-the-fold) ===== */
+        /* ============================================================
+           CRITICAL CSS (above‑the‑fold)
+           ============================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -310,6 +308,15 @@
         }
         .nav-item.catalog-link:hover {
             background: var(--accent-gold-dim);
+        }
+        .nav-item.lock-link {
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+            color: var(--accent-red);
+        }
+        .nav-item.lock-link:hover {
+            background: rgba(239, 68, 68, 0.1);
         }
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
@@ -991,9 +998,6 @@
         .toast.info i {
             color: var(--accent-blue);
         }
-
-        /* ===== NON-CRITICAL CSS (lazy-loaded) ===== */
-        /* This will be injected after page load */
     </style>
 </head>
 <body>
@@ -1060,8 +1064,7 @@
                 <i class="fas fa-store"></i> View Catalog
                 <span style="margin-left:auto;font-size:10px;color:var(--text-muted);">📤</span>
             </a>
-            <!-- Lock button -->
-            <a class="nav-item" onclick="lockSession()" style="margin-top:8px;border-top:1px solid var(--border-color);padding-top:14px;color:var(--accent-red);">
+            <a class="nav-item lock-link" onclick="lockSession()">
                 <i class="fas fa-lock"></i> Lock Now
             </a>
         </nav>
@@ -1746,7 +1749,6 @@
 
         async function setData(storeName, items) {
             await openDB();
-            // Clear and re-insert
             const tx = db.transaction(storeName, 'readwrite');
             const store = tx.objectStore(storeName);
             await new Promise((resolve, reject) => {
@@ -1769,7 +1771,6 @@
 
         async function deleteItem(storeName, id) {
             await openDB();
-            // Soft delete: mark as deleted
             const items = await dbGetAll(storeName);
             const item = items.find(i => i.id === id);
             if (item) {
@@ -1817,7 +1818,7 @@
                 deleted: false
             };
             await dbPut('activity', entry);
-            // Keep only last 100 entries to avoid bloat
+            // Keep only last 100 entries
             const all = await dbGetAll('activity');
             const sorted = all.filter(a => !a.deleted).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
             if (sorted.length > 100) {
@@ -1880,12 +1881,10 @@
             clearInterval(countdownInterval);
             document.getElementById('timeoutWarning').classList.remove('visible');
 
-            // Set warning timer
             warningTimer = setTimeout(() => {
                 showTimeoutWarning();
             }, (SESSION_TIMEOUT - WARNING_BEFORE) * 1000);
 
-            // Set session end timer
             sessionTimer = setTimeout(() => {
                 lockSession();
             }, SESSION_TIMEOUT * 1000);
@@ -1996,7 +1995,7 @@
         }
 
         // ============================================================
-        //  SYNC TO GOOGLE SHEETS (with compression + progress)
+        //  SYNC TO GOOGLE SHEETS (without compression)
         // ============================================================
         let lastSyncTime = 0;
 
@@ -2022,39 +2021,19 @@
             syncLabel.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
 
             try {
-                // Fetch all data
-                const equipment = await getData('equipment');
-                const rentals = await getData('rentals');
-                const sales = await getData('sales');
-                const customers = await getData('customers');
-                const categories = await getData('categories');
-
-                const totalItems = equipment.length + rentals.length + sales.length + customers.length + categories.length;
-                let processed = 0;
-
-                function updateProgress() {
-                    processed++;
-                    const pct = Math.min(100, Math.round((processed / totalItems) * 100));
-                    syncLabel.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${pct}% (${processed}/${totalItems})`;
-                }
-
-                // Build payload with progress tracking (simplified for single payload)
+                // Build payload (uncompressed)
                 const payload = {
                     secret: settings.secret,
-                    equipment: equipment.map(e => { updateProgress(); return e; }),
-                    rentals: rentals.map(r => { updateProgress(); return r; }),
-                    sales: sales.map(s => { updateProgress(); return s; }),
-                    customers: customers.map(c => { updateProgress(); return c; }),
-                    categories: categories.map(c => { updateProgress(); return c; }),
+                    equipment: await getData('equipment'),
+                    rentals: await getData('rentals'),
+                    sales: await getData('sales'),
+                    customers: await getData('customers'),
+                    categories: await getData('categories'),
                 };
 
-                // Compress the payload
-                const jsonString = JSON.stringify(payload);
-                const compressed = LZString.compressToEncodedURIComponent(jsonString);
-
-                // Send compressed payload
+                // Send as form-urlencoded (no CORS preflight)
                 const formData = new URLSearchParams();
-                formData.append('data', compressed);
+                formData.append('data', JSON.stringify(payload));
 
                 const response = await fetch(settings.url, {
                     method: 'POST',
@@ -2504,17 +2483,15 @@
             if (idx > -1) equip[idx] = item;
             await setData('equipment', equip);
 
+            // Log with customer name
+            const customers = await getData('customers');
+            const cust = customers.find(c => c.id === customerId);
             showToast(`Rental created! Total: ${formatCurrency(totalPrice)}`, 'success');
-            await logActivity('Created rental', `${item.name} x${qty} → ${getCustomerName(customerId)}`);
+            await logActivity('Created rental', `${item.name} x${qty} → ${cust ? cust.name : 'Unknown'}`);
             closeModal('rentalModal');
             await renderRentals();
             await updateBadges();
             if (currentPage === 'dashboard') await renderDashboard();
-        }
-
-        function getCustomerName(id) {
-            // Async helper – but we need a sync version for log activity...
-            // We'll handle this in the log.
         }
 
         async function returnRental(id) {
@@ -2664,8 +2641,10 @@
             if (idx > -1) equip[idx] = item;
             await setData('equipment', equip);
 
+            const customers = await getData('customers');
+            const cust = customers.find(c => c.id === customerId);
             showToast(`Sale recorded! Total: ${formatCurrency(totalPrice)}`, 'success');
-            await logActivity('Recorded sale', `${item.name} x${qty} → ${getCustomerName(customerId)}`);
+            await logActivity('Recorded sale', `${item.name} x${qty} → ${cust ? cust.name : 'Unknown'}`);
             closeModal('saleModal');
             await renderSales();
             await updateBadges();
@@ -3085,24 +3064,13 @@
         }
 
         // ============================================================
-        //  LOAD NON-CRITICAL CSS
+        //  INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Non-critical CSS is already included in the main style tag,
-            // but we can add a small delay to let the page paint first.
-            // Everything is already there.
-            // Focus password
             document.getElementById('passwordInput').focus();
             document.body.style.overflow = 'hidden';
         });
-
-        // ============================================================
-        //  INITIALISE DB ON PAGE LOAD (but wait for password)
-        // ============================================================
-        // The password overlay is shown first.
-        // When unlocked, initApp() is called.
         console.log('NADEGE Logistics v3.0 - waiting for authentication...');
     </script>
-
 </body>
 </html>
