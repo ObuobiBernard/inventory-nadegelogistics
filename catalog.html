@@ -52,7 +52,7 @@
         /* ===== HERO ===== */
         .hero {
             position: relative;
-            min-height: 60vh;
+            min-height: 55vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -85,67 +85,31 @@
             max-width: 800px;
         }
         .hero img {
-            max-width: 180px;
-            margin-bottom: 20px;
+            max-width: 160px;
+            margin-bottom: 16px;
             filter: drop-shadow(0 0 20px rgba(245, 179, 66, 0.3));
         }
         .hero h1 {
-            font-size: 3.2rem;
+            font-size: 3rem;
             font-weight: 700;
             letter-spacing: -1px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .hero h1 span {
             color: var(--accent-gold);
         }
         .hero p {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             color: var(--text-secondary);
             max-width: 600px;
-            margin: 0 auto 30px;
+            margin: 0 auto;
             line-height: 1.6;
         }
-        .hero .btn-group {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 28px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: 0.3s ease;
-            border: none;
-            cursor: pointer;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .btn-primary {
-            background: var(--accent-gold);
-            color: #0b0e14;
-            border-color: var(--accent-gold);
-        }
-        .btn-primary:hover {
-            background: #e6a63c;
-            border-color: #e6a63c;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--text-secondary);
-        }
-        .btn-outline:hover {
-            background: var(--bg-card);
-            border-color: var(--accent-gold);
+        .hero .tagline {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-style: italic;
         }
 
         /* ===== CATEGORY FILTER ===== */
@@ -304,8 +268,8 @@
             color: var(--text-muted);
             font-size: 0.9rem;
         }
-        .footer a {
-            color: var(--accent-gold);
+        .footer strong {
+            color: var(--text-primary);
         }
 
         /* ===== RESPONSIVE ===== */
@@ -323,7 +287,7 @@
         }
         @media (max-width: 480px) {
             .hero {
-                min-height: 50vh;
+                min-height: 45vh;
             }
             .hero h1 {
                 font-size: 1.8rem;
@@ -341,14 +305,10 @@
     <!-- ===== HERO ===== -->
     <section class="hero" data-aos="fade-in" data-aos-duration="1000">
         <div class="hero-content">
-            <!-- Logo – same file as in sidebar -->
-            <img src="nadege logo.jpg" alt="NADEGE Logistics" style="max-width:180px;" />
+            <img src="nadege logo.jpg" alt="NADEGE Logistics" />
             <h1>Premium Event <span>Equipment</span></h1>
             <p>Explore our wide range of LED Screens, Stages, Trusses, PA Systems, and more – available for rental and purchase.</p>
-            <div class="btn-group">
-                <a href="index.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Back to Inventory</a>
-                <a href="#catalog" class="btn btn-outline"><i class="fas fa-search"></i> Browse Catalog</a>
-            </div>
+            <div class="tagline">An anchor in a new era.</div>
         </div>
     </section>
 
@@ -363,8 +323,7 @@
 
     <!-- ===== FOOTER ===== -->
     <div class="footer">
-        &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era. &nbsp;·&nbsp; 
-        <a href="index.html">Inventory Management</a>
+        &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era.
     </div>
 
     <!-- ===== SCRIPTS ===== -->
@@ -418,7 +377,7 @@
                     <div class="empty-state" style="grid-column:1/-1;">
                         <i class="fas fa-box-open"></i>
                         <h3>No equipment found</h3>
-                        <p>Try adjusting the filter or add items in the inventory system.</p>
+                        <p>Check back later – our inventory is updated regularly.</p>
                     </div>
                 `;
                 return;
@@ -450,7 +409,6 @@
                 `;
             }).join('');
 
-            // Re-init AOS for new elements
             AOS.refresh();
         }
 
@@ -460,14 +418,12 @@
         function buildFilters() {
             const categories = getData(STORAGE_KEYS.categories);
             const bar = document.getElementById('filterBar');
-            // Keep the "All" button
             let html = `<button class="filter-btn active" data-category="all">All</button>`;
             categories.forEach(cat => {
                 html += `<button class="filter-btn" data-category="${cat.id}">${cat.name}</button>`;
             });
             bar.innerHTML = html;
 
-            // Attach click events
             bar.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
                     bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -482,15 +438,13 @@
         //  INIT
         // ============================================================
         function init() {
-            // If no data in localStorage, show empty state with guidance
-            // (the inventory app will have seeded data; if not, we show empty)
             buildFilters();
             renderCatalog('all');
         }
 
         document.addEventListener('DOMContentLoaded', init);
 
-        console.log('🏗️ NADEGE Logistics Catalog loaded. Data from localStorage.');
+        console.log('🏗️ NADEGE Logistics Catalog loaded (public view).');
     </script>
 </body>
 </html>
