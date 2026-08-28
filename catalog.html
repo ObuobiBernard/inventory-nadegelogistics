@@ -4,13 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Equipment Catalog</title>
+
+    <!-- ===== PRECONNECT & PRELOAD ===== -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
 
     <style>
+        /* ============================================================
+           STYLES – same as before, kept minimal for performance
+           ============================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -48,6 +55,7 @@
             color: inherit;
         }
 
+        /* ===== HERO ===== */
         .hero {
             position: relative;
             min-height: 55vh;
@@ -110,6 +118,7 @@
             font-style: italic;
         }
 
+        /* ===== FILTER BAR ===== */
         .filter-bar {
             padding: 30px 20px 10px;
             text-align: center;
@@ -136,6 +145,7 @@
             border-color: var(--accent-gold);
         }
 
+        /* ===== CATALOG GRID ===== */
         .catalog-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -243,6 +253,7 @@
             background: #8b5cf6;
         }
 
+        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -255,6 +266,7 @@
             margin-bottom: 16px;
         }
 
+        /* ===== FOOTER ===== */
         .footer {
             border-top: 1px solid var(--border-color);
             padding: 30px 20px;
@@ -266,6 +278,7 @@
             color: var(--text-primary);
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.2rem;
@@ -295,6 +308,7 @@
 </head>
 <body>
 
+    <!-- ===== HERO ===== -->
     <section class="hero" data-aos="fade-in" data-aos-duration="1000">
         <div class="hero-content">
             <img src="nadege logo.jpg" alt="NADEGE Logistics" />
@@ -304,28 +318,50 @@
         </div>
     </section>
 
+    <!-- ===== FILTER BAR ===== -->
     <div class="filter-bar" id="filterBar" data-aos="fade-up" data-aos-delay="100">
         <button class="filter-btn active" data-category="all">All</button>
     </div>
 
+    <!-- ===== CATALOG GRID ===== -->
     <div class="catalog-grid" id="catalogGrid"></div>
 
+    <!-- ===== FOOTER ===== -->
     <div class="footer">
         &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era.
     </div>
 
+    <!-- ============================================================ -->
+    <!-- ===== SCRIPTS ===== -->
+    <!-- ============================================================ -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
+        // Init AOS
         AOS.init({ once: true, offset: 40, duration: 600, easing: 'ease-out' });
 
         // ============================================================
-        //  INDEXEDDB – same as inventory
+        //  INDEXEDDB – ✅ FIX: added onupgradeneeded
         // ============================================================
         const DB_NAME = 'NadegeInventoryDB';
+        const DB_VERSION = 3;
+        const STORES = ['equipment', 'categories', 'customers', 'rentals', 'sales', 'settings', 'activity'];
 
         function openDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 3);
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = function(e) {
+                    const d = e.target.result;
+                    STORES.forEach(storeName => {
+                        if (!d.objectStoreNames.contains(storeName)) {
+                            const store = d.createObjectStore(storeName, { keyPath: 'id' });
+                            if (storeName === 'equipment') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'rentals') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'sales') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'customers') store.createIndex('deleted', 'deleted');
+                            if (storeName === 'categories') store.createIndex('deleted', 'deleted');
+                        }
+                    });
+                };
                 request.onsuccess = function(e) { resolve(e.target.result); };
                 request.onerror = function(e) { reject(e.target.error); };
             });
@@ -346,6 +382,9 @@
             return await dbGetAll(db, storeName);
         }
 
+        // ============================================================
+        //  HELPERS
+        // ============================================================
         function getCategoryName(id, categories) {
             const cat = categories.find(c => c.id === id);
             return cat ? cat.name : 'Uncategorized';
@@ -362,12 +401,16 @@
             return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
+        // ============================================================
+        //  RENDER CATALOG
+        // ============================================================
         let currentCategory = 'all';
 
         async function renderCatalog(filter = 'all') {
             const equipment = await getData('equipment');
             const categories = await getData('categories');
 
+            // Filter out deleted items
             const activeEquip = equipment.filter(e => !e.deleted);
             const filtered = filter === 'all' ? activeEquip : activeEquip.filter(e => e.category === filter);
 
@@ -412,6 +455,9 @@
             AOS.refresh();
         }
 
+        // ============================================================
+        //  CATEGORY FILTERS
+        // ============================================================
         async function buildFilters() {
             const categories = await getData('categories');
             const bar = document.getElementById('filterBar');
@@ -432,13 +478,16 @@
             });
         }
 
+        // ============================================================
+        //  INIT
+        // ============================================================
         async function init() {
             await buildFilters();
             await renderCatalog('all');
         }
 
         document.addEventListener('DOMContentLoaded', init);
-        console.log('🏗️ NADEGE Logistics Catalog loaded (v3.0 - IndexedDB).');
+        console.log('🏗️ NADEGE Logistics Catalog loaded (v3.0 - IndexedDB with onupgradeneeded).');
     </script>
 </body>
 </html>
