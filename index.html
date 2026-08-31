@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Inventory Management</title>
 
-    <!-- ===== CSP (Content Security Policy) – ✅ FIXED ===== -->
+    <!-- ===== CSP (Content Security Policy) ===== -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com;
@@ -437,6 +437,15 @@
         .btn-catalog:hover {
             background: var(--accent-gold);
             color: #0b0e14;
+        }
+        .btn-import {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+        .btn-import:hover {
+            background: #2563eb;
+            border-color: #2563eb;
         }
 
         /* ===== STATS ===== */
@@ -995,6 +1004,59 @@
         .toast.info i {
             color: var(--accent-blue);
         }
+
+        /* ===== CSV IMPORT MODAL ===== */
+        #csvImportModal .modal {
+            max-width: 600px;
+        }
+        #csvImportModal .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-secondary);
+        }
+        #csvImportModal .drop-zone:hover,
+        #csvImportModal .drop-zone.dragover {
+            border-color: var(--accent-gold);
+            background: var(--bg-card);
+        }
+        #csvImportModal .drop-zone i {
+            font-size: 48px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+        #csvImportModal .drop-zone p {
+            color: var(--text-secondary);
+        }
+        #csvImportModal .drop-zone .file-input {
+            display: none;
+        }
+        #csvImportModal .import-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+        #csvImportModal .import-preview table {
+            font-size: 12px;
+        }
+        #csvImportModal .import-preview th,
+        #csvImportModal .import-preview td {
+            padding: 4px 8px;
+        }
+        #csvImportModal .import-preview .success {
+            color: var(--accent-green);
+        }
+        #csvImportModal .import-preview .error {
+            color: var(--accent-red);
+        }
     </style>
 </head>
 <body>
@@ -1067,7 +1129,7 @@
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v3.2 · CSP Fixed
+            v3.2 · CSV Import Ready
         </div>
     </aside>
 
@@ -1095,6 +1157,9 @@
                 </button>
                 <button class="btn btn-primary" onclick="openAddModal()">
                     <i class="fas fa-plus"></i> Add Equipment
+                </button>
+                <button class="btn btn-import" onclick="openCsvImportModal()" title="Import CSV">
+                    <i class="fas fa-file-import"></i> Import
                 </button>
                 <button class="btn btn-outline" onclick="openSettingsModal()" title="Sync Settings">
                     <i class="fas fa-cog"></i>
@@ -1169,6 +1234,7 @@
                             <option value="all">All Categories</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="openAddModal()"><i class="fas fa-plus"></i> Add</button>
+                        <button class="btn btn-sm btn-import" onclick="openCsvImportModal()" title="Import CSV"><i class="fas fa-file-import"></i> Import</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleShowDeleted()" id="showDeletedBtn"><i class="fas fa-eye"></i> Show Deleted</button>
                     </div>
                 </div>
@@ -1324,6 +1390,48 @@
     </main>
 
     <!-- ===== MODALS ===== -->
+
+    <!-- CSV Import Modal -->
+    <div class="modal-overlay" id="csvImportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-import" style="color:var(--accent-gold);margin-right:8px;"></i>Import CSV</h3>
+                <button class="modal-close" onclick="closeModal('csvImportModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Select CSV file</label>
+                <div class="drop-zone" id="csvDropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p><strong>Click to browse</strong> or drag &amp; drop your CSV file here</p>
+                    <input type="file" id="csvFileInput" accept=".csv" class="file-input" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Category to import into</label>
+                <select id="csvCategorySelect">
+                    <option value="new">Create new category from filename</option>
+                    <option value="LED Screens">LED Screens</option>
+                    <option value="Sound Equipment">Sound Equipment</option>
+                    <option value="Stage">Stage</option>
+                </select>
+            </div>
+            <div id="csvPreview" style="display:none;">
+                <div class="form-group">
+                    <label>Preview</label>
+                    <div class="import-preview" id="csvPreviewContent"></div>
+                </div>
+                <div class="form-group" style="display:flex;gap:10px;">
+                    <button class="btn btn-success" onclick="executeCsvImport()" id="csvImportExecute">
+                        <i class="fas fa-check"></i> Import <span id="csvImportCount">0</span> items
+                    </button>
+                    <button class="btn btn-outline" onclick="clearCsvPreview()">Clear</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('csvImportModal')">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
@@ -1619,7 +1727,7 @@
         //  INDEXEDDB WRAPPER
         // ============================================================
         const DB_NAME = 'NadegeInventoryDB';
-        const DB_VERSION = 3;
+        const DB_VERSION = 4; // Incremented for CSV import
         const STORES = ['equipment', 'categories', 'customers', 'rentals', 'sales', 'settings', 'activity'];
 
         let db = null;
@@ -1832,7 +1940,7 @@
         }
 
         // ============================================================
-        //  CUSTOM DATA HELPERS (with soft delete filtering)
+        //  CUSTOM DATA HELPERS
         // ============================================================
         async function getActive(storeName, showDeleted = false) {
             const items = await getData(storeName);
@@ -1979,7 +2087,6 @@
                 return;
             }
 
-            // Rate limiting
             const now = Date.now();
             if (now - lastSyncTime < SYNC_COOLDOWN * 1000) {
                 const remaining = Math.ceil((SYNC_COOLDOWN * 1000 - (now - lastSyncTime)) / 1000);
@@ -2054,6 +2161,293 @@
             closeModal('settingsModal');
             showToast('Settings saved successfully!', 'success');
             await logActivity('Settings updated', 'Sync settings changed');
+        }
+
+        // ============================================================
+        //  CSV IMPORT
+        // ============================================================
+        let csvData = [];
+        let csvHeaders = [];
+        let csvFileName = '';
+
+        function openCsvImportModal() {
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('csvPreview').style.display = 'none';
+            document.getElementById('csvPreviewContent').innerHTML = '';
+            csvData = [];
+            csvHeaders = [];
+            openModal('csvImportModal');
+        }
+
+        // Drag and drop
+        const dropZone = document.getElementById('csvDropZone');
+        const fileInput = document.getElementById('csvFileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleCsvFile(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleCsvFile(e.target.files[0]);
+            }
+        });
+
+        function handleCsvFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showToast('Please select a CSV file.', 'error');
+                return;
+            }
+            csvFileName = file.name.replace('.csv', '');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseCsv(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCsv(text) {
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                showToast('CSV file must have a header row and at least one data row.', 'error');
+                return;
+            }
+
+            // Parse headers
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            csvHeaders = headers;
+
+            // Parse data
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                if (values.length >= headers.length) {
+                    const row = {};
+                    headers.forEach((h, idx) => {
+                        row[h] = values[idx] || '';
+                    });
+                    data.push(row);
+                }
+            }
+
+            if (data.length === 0) {
+                showToast('No valid data rows found in CSV.', 'error');
+                return;
+            }
+
+            csvData = data;
+            showCsvPreview(data, headers);
+        }
+
+        function showCsvPreview(data, headers) {
+            const previewEl = document.getElementById('csvPreviewContent');
+            const countEl = document.getElementById('csvImportCount');
+
+            // Map headers to system fields
+            const fieldMap = {
+                'Item ID': 'id',
+                'Category': 'category',
+                'Item Description': 'name',
+                'Description': 'name',
+                'Supplier': 'supplier',
+                'Quantity': 'quantity',
+                'Unit Cost (GHS)': 'unitCost',
+                'Total Cost (GHS)': 'totalCost',
+                'Purchase Date': 'purchaseDate',
+                'Invoice / Ref No.': 'invoice',
+                'Condition': 'condition',
+                'Location': 'location',
+                'Notes': 'notes',
+                'Currency': 'currency',
+                'Exchange Rate': 'exchangeRate',
+                'Amount Paid (GHS)': 'amountPaid',
+                'Balance Due (GHS)': 'balanceDue',
+                'Payment Status': 'paymentStatus',
+                'Asset Status': 'assetStatus',
+                'Rental Status': 'status',
+                'Serial / Asset Tag': 'serial',
+                'Last Maintenance': 'lastMaintenance',
+                'Next Maintenance': 'nextMaintenance'
+            };
+
+            // Build preview table
+            let html = `<table>
+                <thead><tr>
+                    <th>#</th>
+                    <th>Item ID</th>
+                    <th>Name</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                </tr></thead>
+                <tbody>`;
+
+            data.slice(0, 20).forEach((row, idx) => {
+                const name = row['Item Description'] || row['Description'] || 'Unknown';
+                const qty = parseInt(row['Quantity']) || 1;
+                const status = row['Rental Status'] || 'available';
+                html += `<tr>
+                    <td>${idx + 1}</td>
+                    <td>${escapeHtml(row['Item ID'] || '')}</td>
+                    <td>${escapeHtml(name)}</td>
+                    <td>${qty}</td>
+                    <td><span class="status-badge ${getStatusBadge(status)}">${status}</span></td>
+                </tr>`;
+            });
+
+            if (data.length > 20) {
+                html += `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">+ ${data.length - 20} more items</td></tr>`;
+            }
+
+            html += `</tbody></table>`;
+            previewEl.innerHTML = html;
+            countEl.textContent = data.length;
+
+            // Auto-select category based on filename
+            const catSelect = document.getElementById('csvCategorySelect');
+            const fileName = csvFileName.toLowerCase();
+            if (fileName.includes('led')) {
+                catSelect.value = 'LED Screens';
+            } else if (fileName.includes('sound') || fileName.includes('audio')) {
+                catSelect.value = 'Sound Equipment';
+            } else if (fileName.includes('stage')) {
+                catSelect.value = 'Stage';
+            } else {
+                catSelect.value = 'new';
+            }
+
+            document.getElementById('csvPreview').style.display = 'block';
+        }
+
+        function clearCsvPreview() {
+            document.getElementById('csvPreview').style.display = 'none';
+            document.getElementById('csvPreviewContent').innerHTML = '';
+            csvData = [];
+            csvHeaders = [];
+            document.getElementById('csvFileInput').value = '';
+        }
+
+        async function executeCsvImport() {
+            if (csvData.length === 0) {
+                showToast('No data to import.', 'error');
+                return;
+            }
+
+            const catSelect = document.getElementById('csvCategorySelect');
+            let categoryName = catSelect.value;
+
+            // If "new" is selected, use the filename
+            if (categoryName === 'new') {
+                categoryName = csvFileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                // Remove common suffixes
+                categoryName = categoryName.replace(/\s*(inventory|sheet|data|list)$/i, '');
+            }
+
+            // Find or create category
+            let categories = await getData('categories');
+            let category = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase() && !c.deleted);
+
+            if (!category) {
+                // Create new category
+                const newCat = {
+                    id: genId(),
+                    name: categoryName,
+                    icon: 'fa-solid fa-cube',
+                    deleted: false
+                };
+                categories.push(newCat);
+                await setData('categories', categories);
+                category = newCat;
+                await logActivity('Created category', `"${categoryName}" for CSV import`);
+            }
+
+            const categoryId = category.id;
+            let imported = 0;
+            let skipped = 0;
+
+            // Get existing equipment to check for duplicates
+            const existingEquip = await getData('equipment');
+            const existingNames = new Set(existingEquip.map(e => e.name.toLowerCase()));
+
+            for (const row of csvData) {
+                const name = row['Item Description'] || row['Description'] || row['Item Name'] || row['name'] || 'Unknown Item';
+                const id = row['Item ID'] || row['id'] || genId();
+                const qty = parseInt(row['Quantity'] || row['quantity'] || 1) || 1;
+                const available = qty; // By default, all are available
+                const rentalPrice = parseFloat(row['Rental Price'] || row['rentalPrice'] || 0) || 0;
+                const salePrice = parseFloat(row['Sale Price'] || row['salePrice'] || row['Unit Cost (GHS)'] || 0) || 0;
+                const status = row['Rental Status'] || row['status'] || 'available';
+                const notes = row['Notes'] || row['notes'] || '';
+
+                // Check for duplicate by name (case-insensitive)
+                if (existingNames.has(name.toLowerCase())) {
+                    skipped++;
+                    continue;
+                }
+
+                const item = {
+                    id: id,
+                    name: name,
+                    category: categoryId,
+                    description: notes || `Imported from ${csvFileName}`,
+                    quantity: qty,
+                    available: available,
+                    rentalPrice: rentalPrice,
+                    salePrice: salePrice,
+                    status: status,
+                    deleted: false,
+                    supplier: row['Supplier'] || '',
+                    serial: row['Serial / Asset Tag'] || '',
+                    location: row['Location'] || '',
+                    purchaseDate: row['Purchase Date'] || '',
+                    condition: row['Condition'] || 'New',
+                    invoice: row['Invoice / Ref No.'] || '',
+                    _imported: true,
+                    _importDate: new Date().toISOString()
+                };
+
+                existingEquip.push(item);
+                existingNames.add(name.toLowerCase());
+                imported++;
+            }
+
+            // Save all equipment
+            await setData('equipment', existingEquip);
+
+            // Log activity
+            await logActivity('CSV Import', `${imported} items imported into "${categoryName}"`);
+
+            if (skipped > 0) {
+                showToast(`✅ Imported ${imported} items (${skipped} duplicates skipped)`, 'success');
+            } else {
+                showToast(`✅ Successfully imported ${imported} items into "${categoryName}"`, 'success');
+            }
+
+            closeModal('csvImportModal');
+            clearCsvPreview();
+
+            // Re-render
+            await renderEquipment();
+            await updateBadges();
+            if (currentPage === 'dashboard') await renderDashboard();
+
+            // Refresh category filter
+            const filterEl = document.getElementById('categoryFilter');
+            const cats = await getData('categories');
+            const currentVal = filterEl.value;
+            filterEl.innerHTML = '<option value="all">All Categories</option>' +
+                cats.filter(c => !c.deleted).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            filterEl.value = currentVal;
         }
 
         // ============================================================
@@ -2175,7 +2569,7 @@
             const tbody = document.getElementById('equipmentTableBody');
             if (filtered.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-cubes"></i><h3>No equipment found</h3><p>Add your first piece of equipment.</p></div></td></tr>`;
+                    `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-cubes"></i><h3>No equipment found</h3><p>Add your first piece of equipment or import from CSV.</p></div></td></tr>`;
                 return;
             }
 
@@ -2184,8 +2578,9 @@
                 const catClass = cat ? cat.name.toLowerCase().replace(/\s/g, '') : 'other';
                 const statusClass = getStatusBadge(e.status);
                 const isDeleted = e.deleted === true;
+                const isImported = e._imported === true;
                 return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
-                            <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
+                            <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}${isImported && !isDeleted ? ' <span style="color:var(--accent-gold);font-size:10px;">📥</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
                             <td><span class="category-tag ${catClass}">${cat ? escapeHtml(cat.name) : 'Uncategorized'}</span></td>
                             <td>${e.quantity}</td>
                             <td>${e.available}</td>
@@ -2333,7 +2728,7 @@
         }
 
         // ============================================================
-        //  RENTALS
+        //  RENTALS (same as before – unchanged)
         // ============================================================
         async function renderRentals() {
             const rentals = await getActive('rentals', showDeleted.rentals);
@@ -2515,7 +2910,7 @@
         }
 
         // ============================================================
-        //  SALES
+        //  SALES (same as before – unchanged)
         // ============================================================
         async function renderSales() {
             const sales = await getActive('sales', showDeleted.sales);
@@ -2651,7 +3046,7 @@
         }
 
         // ============================================================
-        //  CUSTOMERS
+        //  CUSTOMERS (same as before – unchanged)
         // ============================================================
         async function renderCustomers() {
             const customers = await getActive('customers', showDeleted.customers);
@@ -2763,7 +3158,7 @@
         }
 
         // ============================================================
-        //  CATEGORIES
+        //  CATEGORIES (same as before – unchanged)
         // ============================================================
         async function renderCategories() {
             const cats = await getActive('categories', showDeleted.categories);
@@ -2920,8 +3315,9 @@
                         const catClass = cat ? cat.name.toLowerCase().replace(/\s/g, '') : 'other';
                         const statusClass = getStatusBadge(e.status);
                         const isDeleted = e.deleted === true;
+                        const isImported = e._imported === true;
                         return `<tr style="${isDeleted ? 'opacity:0.5;' : ''}">
-                                    <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
+                                    <td><strong>${escapeHtml(e.name)}</strong>${isDeleted ? ' <span style="color:var(--text-muted);font-size:11px;">(deleted)</span>' : ''}${isImported && !isDeleted ? ' <span style="color:var(--accent-gold);font-size:10px;">📥</span>' : ''}<div class="text-muted" style="font-size:11px;">${escapeHtml(e.description || '')}</div></td>
                                     <td><span class="category-tag ${catClass}">${cat ? escapeHtml(cat.name) : 'Uncategorized'}</span></td>
                                     <td>${e.quantity}</td>
                                     <td>${e.available}</td>
@@ -2951,91 +3347,47 @@
         }
 
         // ============================================================
-        //  INIT APP
+        //  INIT APP – No generic sample data (only import your real data)
         // ============================================================
         async function initApp() {
             await openDB();
+
+            // Check if equipment exists; if not, show empty state
+            const equip = await getData('equipment');
+            if (equip.length === 0) {
+                console.log('📦 No equipment found. Import your real inventory from CSV.');
+                // No generic sample data – user must import from CSV
+            }
+
             const categories = await getData('categories');
             if (categories.length === 0) {
+                // Only create default categories if none exist
                 const defaults = [
                     { id: 'cat1', name: 'LED Screens', icon: 'fa-solid fa-display', deleted: false },
-                    { id: 'cat2', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false },
-                    { id: 'cat3', name: 'Trusses', icon: 'fa-solid fa-bezier-curve', deleted: false },
-                    { id: 'cat4', name: 'PA Systems', icon: 'fa-solid fa-volume-high', deleted: false },
+                    { id: 'cat2', name: 'Sound Equipment', icon: 'fa-solid fa-volume-high', deleted: false },
+                    { id: 'cat3', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false },
+                    { id: 'cat4', name: 'Trusses', icon: 'fa-solid fa-bezier-curve', deleted: false },
                     { id: 'cat5', name: 'Lighting', icon: 'fa-solid fa-lightbulb', deleted: false },
                     { id: 'cat6', name: 'Other', icon: 'fa-solid fa-cube', deleted: false },
                 ];
                 await setData('categories', defaults);
             }
-            const equip = await getData('equipment');
-            if (equip.length === 0) {
-                const defaults = [
-                    { id: 'e1', name: 'P3.9 LED Panel', category: 'cat1', description: 'Indoor rental panel, 500x500mm',
-                        quantity: 120, available: 85, rentalPrice: 45, salePrice: 1200, status: 'available',
-                        deleted: false },
-                    { id: 'e2', name: 'P4.8 LED Wall', category: 'cat1', description: 'Outdoor LED wall, 500x500mm',
-                        quantity: 80, available: 60, rentalPrice: 55, salePrice: 1500, status: 'available',
-                        deleted: false },
-                    { id: 'e3', name: 'Mobile Stage 6x4m', category: 'cat2', description: '6x4m mobile stage with roof',
-                        quantity: 3, available: 2, rentalPrice: 350, salePrice: 8500, status: 'available',
-                        deleted: false },
-                    { id: 'e4', name: 'Truss Tower 4m', category: 'cat3', description: '4m truss tower with base',
-                        quantity: 15, available: 12, rentalPrice: 85, salePrice: 2200, status: 'available',
-                        deleted: false },
-                    { id: 'e5', name: 'Line Array PA System', category: 'cat4', description: '8x dual 10" line array',
-                        quantity: 4, available: 3, rentalPrice: 420, salePrice: 12000, status: 'available',
-                        deleted: false },
-                    { id: 'e6', name: 'Subwoofer 18"', category: 'cat4', description: 'Active 18" subwoofer',
-                        quantity: 8, available: 6, rentalPrice: 95, salePrice: 2800, status: 'available',
-                        deleted: false },
-                    { id: 'e7', name: 'LED Par Can', category: 'cat5', description: 'RGBW LED par can, 36x3W',
-                        quantity: 40, available: 32, rentalPrice: 18, salePrice: 450, status: 'available',
-                        deleted: false },
-                    { id: 'e8', name: 'Truss Section 2m', category: 'cat3', description: '2m truss section, 30x30cm',
-                        quantity: 50, available: 40, rentalPrice: 25, salePrice: 650, status: 'available',
-                        deleted: false },
-                ];
-                await setData('equipment', defaults);
-            }
-            const customers = await getData('customers');
-            if (customers.length === 0) {
-                const defaults = [
-                    { id: 'c1', name: 'Alice Johnson', email: 'alice@eventco.com', phone: '+1 555-0101',
-                        company: 'EventCo', deleted: false },
-                    { id: 'c2', name: 'Bob Smith', email: 'bob@starlight.com', phone: '+1 555-0102',
-                        company: 'Starlight Productions', deleted: false },
-                    { id: 'c3', name: 'Carol White', email: 'carol@audiovision.com', phone: '+1 555-0103',
-                        company: 'AudioVision', deleted: false },
-                ];
-                await setData('customers', defaults);
-            }
-            const rentals = await getData('rentals');
-            if (rentals.length === 0) {
-                const defaults = [{
-                    id: 'r1',
-                    equipmentId: 'e1',
-                    customerId: 'c1',
-                    startDate: '2026-08-15',
-                    endDate: '2026-08-18',
-                    quantity: 20,
-                    totalPrice: 2700,
-                    status: 'active',
-                    deleted: false
-                }];
-                await setData('rentals', defaults);
-            }
-            const sales = await getData('sales');
-            if (sales.length === 0) {
-                const defaults = [{
-                    id: 's1',
-                    equipmentId: 'e3',
-                    customerId: 'c2',
-                    date: '2026-08-10',
-                    quantity: 1,
-                    totalPrice: 8500,
-                    deleted: false
-                }];
-                await setData('sales', defaults);
+
+            // Only create sample data if absolutely nothing exists (first run)
+            const existingEquip = await getData('equipment');
+            if (existingEquip.length === 0) {
+                const customers = await getData('customers');
+                if (customers.length === 0) {
+                    const defaults = [
+                        { id: 'c1', name: 'Alice Johnson', email: 'alice@eventco.com', phone: '+1 555-0101',
+                            company: 'EventCo', deleted: false },
+                        { id: 'c2', name: 'Bob Smith', email: 'bob@starlight.com', phone: '+1 555-0102',
+                            company: 'Starlight Productions', deleted: false },
+                        { id: 'c3', name: 'Carol White', email: 'carol@audiovision.com', phone: '+1 555-0103',
+                            company: 'AudioVision', deleted: false },
+                    ];
+                    await setData('customers', defaults);
+                }
             }
 
             await navigate('dashboard');
@@ -3043,8 +3395,10 @@
             document.querySelectorAll('input[type="date"]').forEach(el => {
                 if (!el.value) el.value = todayStr;
             });
-            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.2 - CSP Fixed).');
+
+            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.2 - CSV Import Ready).');
             console.log('📦 Data stored in IndexedDB.');
+            console.log('📥 Import your real inventory via the "Import" button.');
         }
 
         // ============================================================
