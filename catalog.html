@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NADEGE Logistics · Equipment Catalog</title>
 
-    <!-- ===== CSP (Content Security Policy) ===== -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com;
@@ -16,7 +15,6 @@
         base-uri 'self';
     " />
 
-    <!-- ===== PRECONNECT & PRELOAD ===== -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
@@ -26,7 +24,6 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
 
     <style>
-        /* ===== STYLES (unchanged – kept the same as before) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -64,7 +61,6 @@
             color: inherit;
         }
 
-        /* ===== HERO ===== */
         .hero {
             position: relative;
             min-height: 55vh;
@@ -127,7 +123,6 @@
             font-style: italic;
         }
 
-        /* ===== FILTER BAR ===== */
         .filter-bar {
             padding: 30px 20px 10px;
             text-align: center;
@@ -154,7 +149,6 @@
             border-color: var(--accent-gold);
         }
 
-        /* ===== CATALOG GRID ===== */
         .catalog-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -262,7 +256,6 @@
             background: #8b5cf6;
         }
 
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -275,7 +268,6 @@
             margin-bottom: 16px;
         }
 
-        /* ===== FOOTER ===== */
         .footer {
             border-top: 1px solid var(--border-color);
             padding: 30px 20px;
@@ -287,7 +279,6 @@
             color: var(--text-primary);
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.2rem;
@@ -317,7 +308,6 @@
 </head>
 <body>
 
-    <!-- ===== HERO ===== -->
     <section class="hero" data-aos="fade-in" data-aos-duration="1000">
         <div class="hero-content">
             <img src="nadege logo.jpg" alt="NADEGE Logistics" />
@@ -327,32 +317,22 @@
         </div>
     </section>
 
-    <!-- ===== FILTER BAR ===== -->
     <div class="filter-bar" id="filterBar" data-aos="fade-up" data-aos-delay="100">
         <button class="filter-btn active" data-category="all">All</button>
     </div>
 
-    <!-- ===== CATALOG GRID ===== -->
     <div class="catalog-grid" id="catalogGrid"></div>
 
-    <!-- ===== FOOTER ===== -->
     <div class="footer">
         &copy; 2026 <strong>NADEGE Logistics</strong> &nbsp;·&nbsp; An anchor in a new era.
     </div>
 
-    <!-- ============================================================ -->
-    <!-- ===== SCRIPTS ===== -->
-    <!-- ============================================================ -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        // Init AOS
         AOS.init({ once: true, offset: 40, duration: 600, easing: 'ease-out' });
 
-        // ============================================================
-        //  INDEXEDDB – with onupgradeneeded (compatible with inventory DB)
-        // ============================================================
         const DB_NAME = 'NadegeInventoryDB';
-        const DB_VERSION = 4; // Must match the version in index.html
+        const DB_VERSION = 4;
         const STORES = ['equipment', 'categories', 'customers', 'rentals', 'sales', 'settings', 'activity'];
 
         function openDB() {
@@ -391,9 +371,6 @@
             return await dbGetAll(db, storeName);
         }
 
-        // ============================================================
-        //  HELPERS
-        // ============================================================
         function getCategoryName(id, categories) {
             const cat = categories.find(c => c.id === id);
             return cat ? cat.name : 'Uncategorized';
@@ -410,16 +387,16 @@
             return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
-        // ============================================================
-        //  RENDER CATALOG
-        // ============================================================
+        function formatCurrency(val) {
+            return '$' + Number(val).toFixed(2);
+        }
+
         let currentCategory = 'all';
 
         async function renderCatalog(filter = 'all') {
             const equipment = await getData('equipment');
             const categories = await getData('categories');
 
-            // Filter out deleted items
             const activeEquip = equipment.filter(e => !e.deleted);
             const filtered = filter === 'all' ? activeEquip : activeEquip.filter(e => e.category === filter);
 
@@ -435,15 +412,14 @@
                 return;
             }
 
-            // Sort by name for consistent display
             filtered.sort((a, b) => a.name.localeCompare(b.name));
 
             grid.innerHTML = filtered.map((item, index) => {
                 const statusClass = item.status || 'available';
                 const icon = getCategoryIcon(item.category, categories);
                 const catName = getCategoryName(item.category, categories);
-                // Use description or notes
                 const description = item.description || item.notes || 'No description provided.';
+                const location = item.location ? `&nbsp;·&nbsp; Location: ${escapeHtml(item.location)}` : '';
                 return `
                     <div class="equip-card" data-aos="fade-up" data-aos-delay="${(index % 6) * 50}">
                         <div class="card-image">
@@ -459,8 +435,7 @@
                                 <span>Sale: <span class="price">${formatCurrency(item.salePrice)}</span></span>
                             </div>
                             <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
-                                Qty: ${item.quantity} &nbsp;·&nbsp; Available: ${item.available}
-                                ${item.location ? `&nbsp;·&nbsp; Location: ${escapeHtml(item.location)}` : ''}
+                                Qty: ${item.quantity} &nbsp;·&nbsp; Available: ${item.available} ${location}
                             </div>
                         </div>
                     </div>
@@ -470,19 +445,11 @@
             AOS.refresh();
         }
 
-        function formatCurrency(val) {
-            return '$' + Number(val).toFixed(2);
-        }
-
-        // ============================================================
-        //  CATEGORY FILTERS
-        // ============================================================
         async function buildFilters() {
             const categories = await getData('categories');
             const bar = document.getElementById('filterBar');
             const activeCats = categories.filter(c => !c.deleted);
             let html = `<button class="filter-btn active" data-category="all">All</button>`;
-            // Sort categories alphabetically
             activeCats.sort((a, b) => a.name.localeCompare(b.name));
             activeCats.forEach(cat => {
                 html += `<button class="filter-btn" data-category="${cat.id}">${escapeHtml(cat.name)}</button>`;
@@ -499,16 +466,13 @@
             });
         }
 
-        // ============================================================
-        //  INIT
-        // ============================================================
         async function init() {
             await buildFilters();
             await renderCatalog('all');
         }
 
         document.addEventListener('DOMContentLoaded', init);
-        console.log('🏗️ NADEGE Logistics Catalog loaded (v4.0 - Real Inventory Ready).');
+        console.log('🏗️ NADEGE Logistics Catalog loaded (v4.0 - Real Data Ready).');
     </script>
 </body>
 </html>
