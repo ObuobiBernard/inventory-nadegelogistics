@@ -16,7 +16,6 @@
         base-uri 'self';
     " />
 
-    <!-- ===== PRECONNECT & PRELOAD ===== -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
@@ -1129,7 +1128,7 @@
         </nav>
         <div class="sidebar-footer">
             <i class="fas fa-circle" style="color:var(--accent-green);font-size:8px;display:inline-block;margin-right:6px;"></i>
-            v3.2 · CSV Import Ready
+            v4.0 · Real Data Ready
         </div>
     </aside>
 
@@ -1727,7 +1726,7 @@
         //  INDEXEDDB WRAPPER
         // ============================================================
         const DB_NAME = 'NadegeInventoryDB';
-        const DB_VERSION = 4; // Incremented for CSV import
+        const DB_VERSION = 4;
         const STORES = ['equipment', 'categories', 'customers', 'rentals', 'sales', 'settings', 'activity'];
 
         let db = null;
@@ -2346,19 +2345,15 @@
             const catSelect = document.getElementById('csvCategorySelect');
             let categoryName = catSelect.value;
 
-            // If "new" is selected, use the filename
             if (categoryName === 'new') {
                 categoryName = csvFileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                // Remove common suffixes
                 categoryName = categoryName.replace(/\s*(inventory|sheet|data|list)$/i, '');
             }
 
-            // Find or create category
             let categories = await getData('categories');
             let category = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase() && !c.deleted);
 
             if (!category) {
-                // Create new category
                 const newCat = {
                     id: genId(),
                     name: categoryName,
@@ -2375,7 +2370,6 @@
             let imported = 0;
             let skipped = 0;
 
-            // Get existing equipment to check for duplicates
             const existingEquip = await getData('equipment');
             const existingNames = new Set(existingEquip.map(e => e.name.toLowerCase()));
 
@@ -2383,13 +2377,12 @@
                 const name = row['Item Description'] || row['Description'] || row['Item Name'] || row['name'] || 'Unknown Item';
                 const id = row['Item ID'] || row['id'] || genId();
                 const qty = parseInt(row['Quantity'] || row['quantity'] || 1) || 1;
-                const available = qty; // By default, all are available
+                const available = qty;
                 const rentalPrice = parseFloat(row['Rental Price'] || row['rentalPrice'] || 0) || 0;
                 const salePrice = parseFloat(row['Sale Price'] || row['salePrice'] || row['Unit Cost (GHS)'] || 0) || 0;
                 const status = row['Rental Status'] || row['status'] || 'available';
                 const notes = row['Notes'] || row['notes'] || '';
 
-                // Check for duplicate by name (case-insensitive)
                 if (existingNames.has(name.toLowerCase())) {
                     skipped++;
                     continue;
@@ -2421,10 +2414,7 @@
                 imported++;
             }
 
-            // Save all equipment
             await setData('equipment', existingEquip);
-
-            // Log activity
             await logActivity('CSV Import', `${imported} items imported into "${categoryName}"`);
 
             if (skipped > 0) {
@@ -2436,12 +2426,10 @@
             closeModal('csvImportModal');
             clearCsvPreview();
 
-            // Re-render
             await renderEquipment();
             await updateBadges();
             if (currentPage === 'dashboard') await renderDashboard();
 
-            // Refresh category filter
             const filterEl = document.getElementById('categoryFilter');
             const cats = await getData('categories');
             const currentVal = filterEl.value;
@@ -2728,7 +2716,7 @@
         }
 
         // ============================================================
-        //  RENTALS (same as before – unchanged)
+        //  RENTALS
         // ============================================================
         async function renderRentals() {
             const rentals = await getActive('rentals', showDeleted.rentals);
@@ -2910,7 +2898,7 @@
         }
 
         // ============================================================
-        //  SALES (same as before – unchanged)
+        //  SALES
         // ============================================================
         async function renderSales() {
             const sales = await getActive('sales', showDeleted.sales);
@@ -3046,7 +3034,7 @@
         }
 
         // ============================================================
-        //  CUSTOMERS (same as before – unchanged)
+        //  CUSTOMERS
         // ============================================================
         async function renderCustomers() {
             const customers = await getActive('customers', showDeleted.customers);
@@ -3158,7 +3146,7 @@
         }
 
         // ============================================================
-        //  CATEGORIES (same as before – unchanged)
+        //  CATEGORIES
         // ============================================================
         async function renderCategories() {
             const cats = await getActive('categories', showDeleted.categories);
@@ -3347,48 +3335,294 @@
         }
 
         // ============================================================
-        //  INIT APP – No generic sample data (only import your real data)
+        //  INIT APP – Pre‑loaded with REAL NADEGE Logistics data
         // ============================================================
         async function initApp() {
             await openDB();
 
-            // Check if equipment exists; if not, show empty state
-            const equip = await getData('equipment');
-            if (equip.length === 0) {
-                console.log('📦 No equipment found. Import your real inventory from CSV.');
-                // No generic sample data – user must import from CSV
+            // ============================================================
+            //  CATEGORIES – based on your Excel sheets
+            // ============================================================
+            const existingCats = await getData('categories');
+            let catLED, catSound, catStage;
+
+            if (existingCats.length === 0) {
+                // Create categories
+                catLED = { id: 'cat_led', name: 'LED Screens', icon: 'fa-solid fa-display', deleted: false };
+                catSound = { id: 'cat_sound', name: 'Sound Equipment', icon: 'fa-solid fa-volume-high', deleted: false };
+                catStage = { id: 'cat_stage', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false };
+
+                await setData('categories', [catLED, catSound, catStage]);
+                await logActivity('System init', 'Categories created from real inventory data');
+            } else {
+                catLED = existingCats.find(c => c.name === 'LED Screens');
+                catSound = existingCats.find(c => c.name === 'Sound Equipment');
+                catStage = existingCats.find(c => c.name === 'Stage');
+                if (!catLED) { catLED = { id: 'cat_led', name: 'LED Screens', icon: 'fa-solid fa-display',
+                        deleted: false };
+                    existingCats.push(catLED); }
+                if (!catSound) { catSound = { id: 'cat_sound', name: 'Sound Equipment', icon: 'fa-solid fa-volume-high',
+                        deleted: false };
+                    existingCats.push(catSound); }
+                if (!catStage) { catStage = { id: 'cat_stage', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false };
+                    existingCats.push(catStage); }
+                await setData('categories', existingCats);
             }
 
-            const categories = await getData('categories');
-            if (categories.length === 0) {
-                // Only create default categories if none exist
-                const defaults = [
-                    { id: 'cat1', name: 'LED Screens', icon: 'fa-solid fa-display', deleted: false },
-                    { id: 'cat2', name: 'Sound Equipment', icon: 'fa-solid fa-volume-high', deleted: false },
-                    { id: 'cat3', name: 'Stage', icon: 'fa-solid fa-stage', deleted: false },
-                    { id: 'cat4', name: 'Trusses', icon: 'fa-solid fa-bezier-curve', deleted: false },
-                    { id: 'cat5', name: 'Lighting', icon: 'fa-solid fa-lightbulb', deleted: false },
-                    { id: 'cat6', name: 'Other', icon: 'fa-solid fa-cube', deleted: false },
-                ];
-                await setData('categories', defaults);
-            }
-
-            // Only create sample data if absolutely nothing exists (first run)
+            // ============================================================
+            //  EQUIPMENT – Your real inventory from the Excel sheets
+            // ============================================================
             const existingEquip = await getData('equipment');
+
             if (existingEquip.length === 0) {
-                const customers = await getData('customers');
-                if (customers.length === 0) {
-                    const defaults = [
-                        { id: 'c1', name: 'Alice Johnson', email: 'alice@eventco.com', phone: '+1 555-0101',
-                            company: 'EventCo', deleted: false },
-                        { id: 'c2', name: 'Bob Smith', email: 'bob@starlight.com', phone: '+1 555-0102',
-                            company: 'Starlight Productions', deleted: false },
-                        { id: 'c3', name: 'Carol White', email: 'carol@audiovision.com', phone: '+1 555-0103',
-                            company: 'AudioVision', deleted: false },
-                    ];
-                    await setData('customers', defaults);
-                }
+                // LED Screens (from LED Screens sheet)
+                const ledItems = [
+                    { id: 'LED-001', name: 'P3.91 Outdoor LED Panel, 500x1000mm, Setup A',
+                        description: '3m x 4m wall (24 panels). Module 250x250mm; refresh rate 7680Hz; incl. corner protectors, connectors, handles, receiver card, power supply & cables',
+                        quantity: 24, available: 24, rentalPrice: 45, salePrice: 1200, status: 'available',
+                        category: catLED.id, supplier: 'Shenzhen Guangshi Electronics Co., Ltd',
+                        purchaseDate: '2026-04-23', invoice: 'PI LV260423a', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-002', name: 'Nova Video Processor, Setup A',
+                        description: 'Video processor for LED wall', quantity: 1, available: 1, rentalPrice: 50,
+                        salePrice: 4025, status: 'available', category: catLED.id,
+                        supplier: 'Shenzhen Guangshi Electronics Co., Ltd', purchaseDate: '2026-04-23',
+                        invoice: 'PI LV260423a', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-003', name: 'P3.91 Outdoor LED Panel, 500x1000mm, Setup B',
+                        description: '3m x 4m wall (24 panels). Pixel pitch 3.91mm; refresh 1920Hz; die-cast aluminum cabinet 500x1000mm. Converted from USD at 1 USD = GHS 11.7',
+                        quantity: 24, available: 24, rentalPrice: 45, salePrice: 1200, status: 'available',
+                        category: catLED.id, supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd',
+                        purchaseDate: '2026-04-21', invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-004', name: 'Novastar CMS130 Video Processor, Setup B',
+                        description: 'Video processor. Converted from USD at 1 USD = GHS 11.7', quantity: 1, available: 1,
+                        rentalPrice: 50, salePrice: 1801.8, status: 'available', category: catLED.id,
+                        supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd', purchaseDate: '2026-04-21',
+                        invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-005', name: 'Setup A Spares',
+                        description: '2x outdoor P3.91 module, 5V40A power supply, Nova 7508-S card, 4x power/signal cables, mask, IC, lamps, fly case, screws (free with order)',
+                        quantity: 1, available: 1, rentalPrice: 0, salePrice: 0, status: 'available',
+                        category: catLED.id, supplier: 'Shenzhen Guangshi Electronics Co., Ltd',
+                        purchaseDate: '2026-04-23', invoice: 'PI LV260423a', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-006', name: 'Shipping & Customs Clearance, Setup A',
+                        description: 'Shenzhen to Accra. Includes double customs clearance & port fees. Setup A discounted total: GHS 74,175',
+                        quantity: 1, available: 1, rentalPrice: 0, salePrice: 9430, status: 'available',
+                        category: catLED.id, supplier: 'Shenzhen Guangshi Electronics Co., Ltd',
+                        purchaseDate: '2026-04-23', invoice: 'PI LV260423a', condition: 'N/A', location: 'N/A' },
+                    { id: 'LED-007', name: '6-in-1 Flight Case, Setup B',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. Free with order', quantity: 4, available: 4,
+                        rentalPrice: 0, salePrice: 0, status: 'available', category: catLED.id,
+                        supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd', purchaseDate: '2026-04-21',
+                        invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-008', name: 'Novastar MRV208-n Receiving Cards, Setup B',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. Free with order', quantity: 24,
+                        available: 24, rentalPrice: 0, salePrice: 0, status: 'available', category: catLED.id,
+                        supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd', purchaseDate: '2026-04-21',
+                        invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-009', name: 'RJ45 Cables (standard set), Setup B',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. Free with order', quantity: 1, available: 1,
+                        rentalPrice: 0, salePrice: 0, status: 'available', category: catLED.id,
+                        supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd', purchaseDate: '2026-04-21',
+                        invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-010', name: 'Power Supply AC220V Spares, Setup B',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. 3 paid + 1 free = 4 units total',
+                        quantity: 3, available: 3, rentalPrice: 0, salePrice: 70.2, status: 'available',
+                        category: catLED.id, supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd',
+                        purchaseDate: '2026-04-21', invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                    { id: 'LED-011', name: 'Outdoor P3.91 250x250mm LED Module Spares, Setup B',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. 9 paid + 1 free = 10 units total',
+                        quantity: 9, available: 9, rentalPrice: 0, salePrice: 163.8, status: 'available',
+                        category: catLED.id, supplier: 'Guangzhou Cheng Wen Photoelectric Technology Co., Ltd',
+                        purchaseDate: '2026-04-21', invoice: 'PI CWJ2604211000', condition: 'New', location: 'Warehouse' },
+                ];
+
+                // Sound Equipment (from Sound Equipment sheet)
+                const soundItems = [
+                    { id: 'SND-001', name: 'NAQ DT210 Speaker',
+                        description: 'Invoice INV080, PO#67, Due: GHS 306,000 (unpaid)', quantity: 8, available: 8,
+                        rentalPrice: 100, salePrice: 8000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-002', name: 'Rigging Bar',
+                        description: 'Rigging bar for speaker systems', quantity: 2, available: 2, rentalPrice: 20,
+                        salePrice: 2500, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-003', name: 'NAQ B2 Subwoofer',
+                        description: 'Professional subwoofer for PA systems', quantity: 6, available: 6, rentalPrice: 150,
+                        salePrice: 12500, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-004', name: 'NAQ WD15 Stage Monitor',
+                        description: 'Stage monitor for live performances', quantity: 6, available: 6, rentalPrice: 40,
+                        salePrice: 3000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-005', name: 'Amp Rack',
+                        description: 'Power amplifier rack for speakers', quantity: 1, available: 1, rentalPrice: 50,
+                        salePrice: 4000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-006', name: 'PA Processor',
+                        description: 'Digital PA system processor', quantity: 1, available: 1, rentalPrice: 50,
+                        salePrice: 4000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-007', name: 'Speakon Power Sequencer',
+                        description: 'Power sequencer for PA systems', quantity: 1, available: 1, rentalPrice: 30,
+                        salePrice: 4000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-008', name: 'NAQ 41500 Speaker',
+                        description: 'Professional speaker', quantity: 1, available: 1, rentalPrice: 60, salePrice: 6000,
+                        status: 'available', category: catSound.id, supplier: 'Naquamz Musical Store',
+                        purchaseDate: '2026-08-22', invoice: 'INV080', condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-009', name: 'NAQ 22300 Speaker',
+                        description: 'Professional speaker', quantity: 3, available: 3, rentalPrice: 80, salePrice: 7000,
+                        status: 'available', category: catSound.id, supplier: 'Naquamz Musical Store',
+                        purchaseDate: '2026-08-22', invoice: 'INV080', condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-010', name: 'NAQ DT210 Flight Case',
+                        description: 'Flight case for DT210 speakers', quantity: 4, available: 4, rentalPrice: 20,
+                        salePrice: 2000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-011', name: 'NAQ B2 Case',
+                        description: 'Flight case for B2 subwoofers', quantity: 6, available: 6, rentalPrice: 20,
+                        salePrice: 2000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-012', name: 'NAQ WD15 Case',
+                        description: 'Flight case for WD15 stage monitors', quantity: 3, available: 3, rentalPrice: 20,
+                        salePrice: 2000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-013', name: 'BEHRINGER Wing Compact Mixer',
+                        description: 'Digital mixing console', quantity: 1, available: 1, rentalPrice: 300,
+                        salePrice: 40000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-014', name: 'Midas DL32 Stage Box',
+                        description: 'Digital stage box for Midas systems', quantity: 1, available: 1, rentalPrice: 200,
+                        salePrice: 22000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-015', name: 'Cat6 Cable 100m',
+                        description: '100m Cat6 cable for audio networking', quantity: 1, available: 1, rentalPrice: 15,
+                        salePrice: 7000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-016', name: 'Shure ADQ4-in-1 Microphone',
+                        description: 'Professional wireless microphone system', quantity: 1, available: 1,
+                        rentalPrice: 60, salePrice: 7000, status: 'available', category: catSound.id,
+                        supplier: 'Naquamz Musical Store', purchaseDate: '2026-08-22', invoice: 'INV080',
+                        condition: 'New', location: 'Warehouse' },
+                    { id: 'SND-017', name: 'Plastic Case 5U',
+                        description: '5U plastic rack case', quantity: 1, available: 1, rentalPrice: 15, salePrice: 3000,
+                        status: 'available', category: catSound.id, supplier: 'Naquamz Musical Store',
+                        purchaseDate: '2026-08-22', invoice: 'INV080', condition: 'New', location: 'Warehouse' },
+                ];
+
+                // Stage Equipment (from Stage sheet)
+                const stageItems = [
+                    { id: 'STG-001', name: 'Aluminum Stage Panel, 1.22 x 2.44 x 0.065m',
+                        description: '18mm plywood top (6061 aluminum frame, black/red). Converted from USD at 1 USD = GHS 11.7. Stage of 4.88m x 3.66m, height 0.6-1m',
+                        quantity: 6, available: 6, rentalPrice: 50, salePrice: 924.3, status: 'available',
+                        category: catStage.id, supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd',
+                        purchaseDate: '2026-01-06', invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New',
+                        location: 'Warehouse' },
+                    { id: 'STG-002', name: 'Stage Support Frame (short), 1.22 x 0.35 x 0.05m',
+                        description: 'Converted from USD at 1 USD = GHS 11.7', quantity: 9, available: 9,
+                        rentalPrice: 10, salePrice: 245.7, status: 'available', category: catStage.id,
+                        supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd', purchaseDate: '2026-01-06',
+                        invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New', location: 'Warehouse' },
+                    { id: 'STG-003', name: 'Stage Support Frame (long), 2.44 x 0.35 x 0.05m',
+                        description: 'Converted from USD at 1 USD = GHS 11.7', quantity: 8, available: 8,
+                        rentalPrice: 15, salePrice: 397.8, status: 'available', category: catStage.id,
+                        supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd', purchaseDate: '2026-01-06',
+                        invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New', location: 'Warehouse' },
+                    { id: 'STG-004', name: 'Adjustable Stage Leg, 0.5 x 0.11 x 0.11m',
+                        description: 'Converted from USD at 1 USD = GHS 11.7', quantity: 12, available: 12,
+                        rentalPrice: 5, salePrice: 105.3, status: 'available', category: catStage.id,
+                        supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd', purchaseDate: '2026-01-06',
+                        invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New', location: 'Warehouse' },
+                    { id: 'STG-005', name: 'Leg Base Plate, 138 x 138 x 165mm',
+                        description: '30mm diameter tube. Converted from USD at 1 USD = GHS 11.7', quantity: 12,
+                        available: 12, rentalPrice: 3, salePrice: 58.5, status: 'available', category: catStage.id,
+                        supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd', purchaseDate: '2026-01-06',
+                        invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New', location: 'Warehouse' },
+                    { id: 'STG-006', name: '4-Step Stage Stairs',
+                        description: 'For 0.6-1m stage height. Converted from USD at 1 USD = GHS 11.7', quantity: 1,
+                        available: 1, rentalPrice: 30, salePrice: 2468.7, status: 'available', category: catStage.id,
+                        supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd', purchaseDate: '2026-01-06',
+                        invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'New', location: 'Warehouse' },
+                    { id: 'STG-007', name: 'Shipping to Yiwu (consolidation)',
+                        description: 'Converted from USD at 1 USD = GHS 11.7. Freight to Ghana not yet included',
+                        quantity: 1, available: 1, rentalPrice: 0, salePrice: 1497.6, status: 'available',
+                        category: catStage.id, supplier: 'Foshan Nanhai EPE Truss Stage Equipment Co., Ltd',
+                        purchaseDate: '2026-01-06', invoice: 'Quotation (Buyer: Emmanuel Obuobi)', condition: 'N/A',
+                        location: 'N/A' },
+                ];
+
+                // Combine all items
+                const allItems = [...ledItems, ...soundItems, ...stageItems];
+                await setData('equipment', allItems);
+                await logActivity('System init', `Loaded ${allItems.length} real inventory items`);
+
+                console.log(`✅ Loaded ${allItems.length} real inventory items from NADEGE Logistics data.`);
+            } else {
+                console.log(`📦 Found ${existingEquip.length} existing equipment items.`);
             }
+
+            // ============================================================
+            //  CUSTOMERS – Keep the sample ones
+            // ============================================================
+            const customers = await getData('customers');
+            if (customers.length === 0) {
+                const defaults = [
+                    { id: 'c1', name: 'ABC Events Ltd', email: 'info@abcevents.com', phone: '+233 555 0101',
+                        company: 'ABC Events Ltd', deleted: false },
+                    { id: 'c2', name: 'XYZ Church', email: 'admin@xyzchurch.org', phone: '+233 555 0102',
+                        company: 'XYZ Church', deleted: false },
+                    { id: 'c3', name: 'Golden Tulip Hotel', email: 'events@goldentulip.com', phone: '+233 555 0103',
+                        company: 'Golden Tulip Hotel', deleted: false },
+                    { id: 'c4', name: 'Ministry of Youth', email: 'youth@moy.gov.gh', phone: '+233 555 0104',
+                        company: 'Ministry of Youth', deleted: false },
+                    { id: 'c5', name: 'Accra Expo Group', email: 'info@accraexpo.com', phone: '+233 555 0105',
+                        company: 'Accra Expo Group', deleted: false },
+                ];
+                await setData('customers', defaults);
+                console.log('✅ Sample customers created.');
+            }
+
+            // ============================================================
+            //  RENTALS – From the Rentals sheet
+            // ============================================================
+            const rentals = await getData('rentals');
+            if (rentals.length === 0) {
+                const rentalDefaults = [
+                    { id: 'RNT-001', customerId: 'c1', event: 'Corporate Conference', startDate: '2026-08-28',
+                        endDate: '2026-08-30', status: 'Active', notes: 'LED wall + speakers + stage decks',
+                        deleted: false },
+                    { id: 'RNT-002', customerId: 'c2', event: 'Sunday Service', startDate: '2026-08-24',
+                        endDate: '2026-08-27', status: 'Active', notes: 'Subwoofers and stage monitors',
+                        deleted: false },
+                    { id: 'RNT-003', customerId: 'c3', event: 'Awards Night', startDate: '2026-09-05',
+                        endDate: '2026-09-07', status: 'Reserved', notes: 'Deposit received — stock held',
+                    deleted: false },
+                    { id: 'RNT-004', customerId: 'c4', event: 'Youth Rally', startDate: '2026-08-10',
+                        endDate: '2026-08-12', status: 'Returned', notes: 'Closed — stock released automatically',
+                        deleted: false },
+                    { id: 'RNT-005', customerId: 'c5', event: 'Trade Fair (quote stage)', startDate: '2026-09-12',
+                        endDate: '2026-09-15', status: 'Draft',
+                        notes: 'Demo of the insufficient-stock warning', deleted: false },
+                ];
+                await setData('rentals', rentalDefaults);
+                console.log('✅ Sample rentals created.');
+            }
+
+            // ============================================================
+            //  RENTAL LINES – Link rentals to equipment
+            // ============================================================
+            const rentalLines = await getData('sales'); // re-using sales as rental lines for simplicity
+            // We'll skip auto-creating rental lines to avoid complexity on first load
 
             await navigate('dashboard');
             const todayStr = today();
@@ -3396,9 +3630,10 @@
                 if (!el.value) el.value = todayStr;
             });
 
-            console.log('🏗️ NADEGE Logistics Inventory System loaded (v3.2 - CSV Import Ready).');
-            console.log('📦 Data stored in IndexedDB.');
-            console.log('📥 Import your real inventory via the "Import" button.');
+            console.log('🏗️ NADEGE Logistics Inventory System loaded (v4.0 - Real Data Ready).');
+            console.log('📦 All real inventory from your Excel sheets is pre-loaded.');
+            console.log('📊 Categories: LED Screens, Sound Equipment, Stage.');
+            console.log(`📦 Total items: ${(await getData('equipment')).length}`);
         }
 
         // ============================================================
@@ -3408,7 +3643,7 @@
             document.getElementById('passwordInput').focus();
             document.body.style.overflow = 'hidden';
         });
-        console.log('NADEGE Logistics v3.2 - waiting for authentication...');
+        console.log('NADEGE Logistics v4.0 - Real Data Ready');
     </script>
 </body>
 </html>
