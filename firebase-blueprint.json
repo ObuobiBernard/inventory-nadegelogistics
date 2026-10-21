@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access for clients, staff, and admin",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth user ID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Full name of the user" },
+        "role": { "type": "string", "enum": ["client", "staff", "admin"], "description": "User access role" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "company": { "type": "string", "description": "Company or organization name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "StaffInvitation": {
+      "title": "StaffInvitation",
+      "description": "Pre-authorized staff emails assigned by admin for first-time password setup",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email", "description": "Authorized staff email" },
+        "role": { "type": "string", "enum": ["staff", "admin"], "description": "Assigned staff role" },
+        "name": { "type": "string", "description": "Staff name" },
+        "assignedBy": { "type": "string", "description": "Admin UID who authorized this staff" },
+        "claimed": { "type": "boolean", "description": "Whether first-time setup was completed" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["email", "role"]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Inventory equipment items available for rent or purchase",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the equipment" },
+        "category": { "type": "string", "description": "Category ID or name" },
+        "description": { "type": "string", "description": "Details and specs" },
+        "quantity": { "type": "number", "description": "Total quantity in stock" },
+        "available": { "type": "number", "description": "Quantity currently available" },
+        "rentalPrice": { "type": "number", "description": "Rental price in GHS per day" },
+        "salePrice": { "type": "number", "description": "Sale purchase price in GHS" },
+        "status": { "type": "string", "enum": ["available", "rented", "maintenance", "reserved", "sold"], "description": "Stock status" },
+        "supplier": { "type": "string", "description": "Supplier information" },
+        "location": { "type": "string", "description": "Storage location" },
+        "deleted": { "type": "boolean", "description": "Soft deletion status" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["name", "category", "quantity", "available", "rentalPrice", "salePrice"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Classification categories for inventory items",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the category" },
+        "icon": { "type": "string", "description": "FontAwesome icon identifier" },
+        "deleted": { "type": "boolean", "description": "Soft deletion status" }
+      },
+      "required": ["name"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order or service booking request",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string", "description": "Firebase Auth UID or customer identifier" },
+        "customerName": { "type": "string", "description": "Customer name" },
+        "customerEmail": { "type": "string", "description": "Customer email" },
+        "customerPhone": { "type": "string", "description": "Customer phone number" },
+        "customerCompany": { "type": "string", "description": "Customer company name" },
+        "orderNumber": { "type": "string", "description": "Unique reference number" },
+        "subtotal": { "type": "number", "description": "Subtotal in GHS" },
+        "totalAmount": { "type": "number", "description": "Total order amount in GHS" },
+        "paymentType": { "type": "string", "enum": ["full", "part", "later"], "description": "Payment method chosen" },
+        "paymentStatus": { "type": "string", "enum": ["paid", "partially_paid", "pending"], "description": "Payment state" },
+        "amountPaid": { "type": "number", "description": "Amount paid in GHS" },
+        "balanceDue": { "type": "number", "description": "Remaining balance due in GHS" },
+        "orderStatus": { "type": "string", "enum": ["pending", "confirmed", "in_progress", "completed", "cancelled"], "description": "Order processing status" },
+        "invoiceNumber": { "type": "string", "description": "Proforma invoice number" },
+        "receiptNumber": { "type": "string", "description": "Payment receipt number if payment made" },
+        "eventDetails": { "type": "string", "description": "Event dates, venue, notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Order placement timestamp" }
+      },
+      "required": ["customerId", "customerName", "customerEmail", "totalAmount", "paymentType", "orderStatus"]
+    },
+    "Rental": {
+      "title": "Rental",
+      "description": "RMS rental contract record",
+      "type": "object",
+      "properties": {
+        "equipmentId": { "type": "string", "description": "Equipment ID" },
+        "customerId": { "type": "string", "description": "Customer ID" },
+        "event": { "type": "string", "description": "Event name" },
+        "startDate": { "type": "string", "description": "Start date" },
+        "endDate": { "type": "string", "description": "End date" },
+        "quantity": { "type": "number", "description": "Quantity rented" },
+        "totalPrice": { "type": "number", "description": "Total price in GHS" },
+        "status": { "type": "string", "enum": ["active", "returned", "reserved", "draft"], "description": "Rental status" },
+        "notes": { "type": "string", "description": "Notes" },
+        "deleted": { "type": "boolean", "description": "Soft deletion status" }
+      },
+      "required": ["equipmentId", "customerId", "startDate", "endDate", "quantity", "totalPrice", "status"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Equipment sales transaction record",
+      "type": "object",
+      "properties": {
+        "equipmentId": { "type": "string", "description": "Equipment ID" },
+        "customerId": { "type": "string", "description": "Customer ID" },
+        "date": { "type": "string", "description": "Sale date" },
+        "quantity": { "type": "number", "description": "Quantity purchased" },
+        "totalPrice": { "type": "number", "description": "Total price in GHS" },
+        "deleted": { "type": "boolean", "description": "Soft deletion status" }
+      },
+      "required": ["equipmentId", "customerId", "date", "quantity", "totalPrice"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trail log entry",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "description": "Action performed" },
+        "details": { "type": "string", "description": "Details of the action" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Log timestamp" }
+      },
+      "required": ["action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered client and staff user profiles"
+    },
+    "/staffInvitations/{email}": {
+      "schema": "StaffInvitation",
+      "description": "Authorized staff email entries controlled by admin"
+    },
+    "/equipment/{equipmentId}": {
+      "schema": "Equipment",
+      "description": "Inventory equipment items accessible by staff and public catalog"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Client orders, proforma invoices, and payment receipts"
+    },
+    "/rentals/{rentalId}": {
+      "schema": "Rental",
+      "description": "Staff rental management records"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Staff sales records"
+    },
+    "/activity/{activityId}": {
+      "schema": "ActivityLog",
+      "description": "System activity logs"
+    }
+  }
+}

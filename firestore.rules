@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && request.auth.token.email == 'nadegelogisticservices@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isStaff() {
+      return isAdmin() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff'
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users Collection (Role-Based Access Control)
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isStaff();
+      allow list: if isStaff();
+      // On create: standard users can create role: 'client'.
+      // If pre-authorized as staff/admin in staffInvitations, can adopt that role.
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        request.resource.data.role == 'client' ||
+        isBootstrappedAdmin() ||
+        (
+          request.auth.token.email != null &&
+          exists(/databases/$(database)/documents/staffInvitations/$(request.auth.token.email)) &&
+          request.resource.data.role == get(/databases/$(database)/documents/staffInvitations/$(request.auth.token.email)).data.role
+        )
+      );
+      // On update: client users CANNOT escalate their own role. Only admin can modify roles.
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Staff Invitations & Pre-Authorizations (Managed by Admin)
+    match /staffInvitations/{email} {
+      allow get: if isStaff() || (isSignedIn() && request.auth.token.email == email);
+      allow list: if isStaff();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.token.email == email &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimed', 'claimedAt', 'uid'])
+      );
+    }
+
+    // Equipment Collection
+    match /equipment/{equipmentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Categories Collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Customer Orders Collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (resource.data.customerId == request.auth.uid || isStaff());
+      allow list: if isSignedIn() && (
+        isStaff() || resource.data.customerId == request.auth.uid
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.customerId == request.auth.uid || isStaff()
+      );
+      allow update: if isStaff() || (
+        isSignedIn() && resource.data.customerId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['eventDetails', 'notes'])
+      );
+      allow delete: if isStaff();
+    }
+
+    // Rentals Collection
+    match /rentals/{rentalId} {
+      allow read, write: if isStaff();
+    }
+
+    // Sales Collection
+    match /sales/{saleId} {
+      allow read, write: if isStaff();
+    }
+
+    // Activity Collection
+    match /activity/{activityId} {
+      allow read, write: if isStaff();
+    }
+  }
+}
