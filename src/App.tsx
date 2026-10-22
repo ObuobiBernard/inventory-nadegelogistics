@@ -56,6 +56,9 @@ import { CategoryModal } from './components/modals/CategoryModal';
 import { CsvImportModal } from './components/modals/CsvImportModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 
+import { LegalModal, LegalTab } from './components/legal/LegalModal';
+import { CookieConsentBanner } from './components/legal/CookieConsentBanner';
+
 const SESSION_TIMEOUT_SECONDS = 5 * 60; // 5 minutes
 const WARNING_BEFORE_SECONDS = 30; // 30 seconds
 
@@ -95,6 +98,13 @@ const AppContent: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedDocOrder, setSelectedDocOrder] = useState<CustomerOrder | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<LegalTab>('terms');
+
+  const handleOpenLegal = (tab: LegalTab = 'terms') => {
+    setLegalModalTab(tab);
+    setLegalModalOpen(true);
+  };
 
   // Staff Modals
   const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
@@ -457,6 +467,7 @@ const AppContent: React.FC = () => {
             setSelectedDocOrder(order);
             setDocModalOpen(true);
           }}
+          onOpenLegal={handleOpenLegal}
         />
       )}
 
@@ -714,6 +725,7 @@ const AppContent: React.FC = () => {
         eventNotes={eventNotes}
         onOrderCompleted={handleOrderCompleted}
         onRequireAuth={() => setAuthModalOpen(true)}
+        onOpenLegal={handleOpenLegal}
       />
 
       {/* Client Auth Modal */}
@@ -721,6 +733,7 @@ const AppContent: React.FC = () => {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onSuccess={() => addToast('Logged in successfully.', 'success')}
+        onOpenLegal={handleOpenLegal}
       />
 
       {/* Official Printable Invoice / Receipt Modal */}
@@ -729,6 +742,16 @@ const AppContent: React.FC = () => {
         onClose={() => setDocModalOpen(false)}
         order={selectedDocOrder}
       />
+
+      {/* Legal & Compliance Modal (Privacy Act 843, Terms, Refund, Cookies) */}
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        defaultTab={legalModalTab}
+      />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsentBanner onOpenLegal={handleOpenLegal} />
 
       {/* Staff Modals */}
       <EquipmentModal

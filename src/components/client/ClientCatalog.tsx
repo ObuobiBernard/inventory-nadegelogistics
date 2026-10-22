@@ -27,6 +27,7 @@ interface ClientCatalogProps {
   onOpenStaffPortal: () => void;
   clientOrders: CustomerOrder[];
   onViewOrderDoc: (order: CustomerOrder) => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
 }
 
 export const ClientCatalog: React.FC<ClientCatalogProps> = ({
@@ -39,6 +40,7 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
   onOpenStaffPortal,
   clientOrders,
   onViewOrderDoc,
+  onOpenLegal,
 }) => {
   const { user, userProfile, signOutUser } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -541,15 +543,66 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
       )}
 
       {/* Client Catalog Footer */}
-      <footer className="border-t border-[#2a3a4a] py-8 text-center text-xs text-[#64748b] mt-12 bg-[#0f151e]">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span>
-            &copy; 2026 <strong className="text-[#edf2f7]">NADEGE Logistics</strong> &nbsp;·&nbsp;
-            An anchor in a new era.
-          </span>
-          <span className="text-[11px] text-[#f5b342]">
-            Accra, Ghana &nbsp;·&nbsp; nadegelogisticservices@gmail.com
-          </span>
+      <footer className="border-t border-[#2a3a4a] py-8 text-xs text-[#94a3b8] mt-12 bg-[#0f151e]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/nadege logo.jpg"
+                alt="NADEGE Logistics"
+                className="h-8 w-auto object-contain rounded drop-shadow"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <div>
+                <span className="font-bold text-white text-sm block">NADEGE Logistics Services</span>
+                <span className="text-[11px] text-[#64748b]">Accra, Greater Accra, Ghana · An anchor in a new era</span>
+              </div>
+            </div>
+
+            {/* Legal Links */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs">
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('terms')}
+                className="hover:text-[#f5b342] transition-colors"
+              >
+                Terms & Conditions
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('privacy')}
+                className="hover:text-[#f5b342] transition-colors"
+              >
+                Privacy Policy (Act 843)
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('refund')}
+                className="hover:text-[#f5b342] transition-colors"
+              >
+                Refund Policy
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('cookies')}
+                className="hover:text-[#f5b342] transition-colors"
+              >
+                Cookie Preferences
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#2a3a4a]/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#64748b]">
+            <div>
+              &copy; {new Date().getFullYear()} NADEGE Logistics Services. All rights reserved.
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+              <span>Ghana Data Protection Act (Act 843) Compliant · Encrypted Cloud Storage</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

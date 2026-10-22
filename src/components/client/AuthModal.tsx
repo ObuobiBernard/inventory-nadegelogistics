@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { X, LogIn, UserPlus, Lock, Mail, User, Phone, Building } from 'lucide-react';
+import { sanitizeText, sanitizeEmail, sanitizePhone, checkRateLimit } from '../../utils/sanitize';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: 'login' | 'register';
   onSuccess?: () => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms') => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -25,8 +27,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [company, setCompany] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -42,21 +43,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!checkRateLimit('auth_submit', 1500)) {
+      setError('Please wait a moment before trying again.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (tab === 'login') {
-        await signInWithEmail(email, password);
+        await signInWithEmail(sanitizeEmail(email), password);
       } else {
-        if (!name.trim()) {
+        const cleanName = sanitizeText(name);
+        if (!cleanName) {
           setError('Please enter your full name.');
           setIsSubmitting(false);
           return;
         }
-        await registerWithEmail(email, password, name, phone, company);
+        if (!consentChecked) {
+          setError('Please agree to the Terms & Conditions and Privacy Policy.');
+          setIsSubmitting(false);
+          return;
+        }
+        await registerWithEmail(
+          sanitizeEmail(email),
+          password,
+          cleanName,
+          sanitizePhone(phone),
+          sanitizeText(company)
+        );
       }
       onSuccess?.();
       onClose();
@@ -263,6 +284,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {tab === 'register' && (
+            <div className="pt-1">
+              <label className="flex items-start gap-2 cursor-pointer text-[11px] text-[#94a3b8] select-none">
+                <input
+                  type="checkbox"
+                  required
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 rounded border-[#2a3a4a] text-[#f5b342] focus:ring-[#f5b342] h-3.5 w-3.5 bg-[#0b0e14]"
+                />
+                <span>
+                  I agree to the{' '}
+                  <span className="text-[#f5b342] underline">Terms & Conditions</span> and{' '}
+                  <span className="text-[#f5b342] underline">Privacy Policy (Act 843)</span>.
+                </span>
+              </label>
             </div>
           )}
 

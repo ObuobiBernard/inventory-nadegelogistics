@@ -15,6 +15,8 @@ import {
   Lock,
 } from 'lucide-react';
 
+import { sanitizeText, sanitizePhone, checkRateLimit } from '../../utils/sanitize';
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +25,7 @@ interface PaymentModalProps {
   eventNotes: string;
   onOrderCompleted: (order: CustomerOrder) => void;
   onRequireAuth: () => void;
+  onOpenLegal?: (tab: 'terms' | 'privacy' | 'refund') => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -33,6 +36,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   eventNotes,
   onOrderCompleted,
   onRequireAuth,
+  onOpenLegal,
 }) => {
   const { user, userProfile } = useAuth();
 
@@ -44,6 +48,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [customAmount, setCustomAmount] = useState<number>(Math.round(subtotal * 0.5));
   const [paymentChannel, setPaymentChannel] = useState<string>('MTN Mobile Money');
   const [momoNumber, setMomoNumber] = useState<string>(userProfile?.phone || '');
+  const [consentAgreed, setConsentAgreed] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
@@ -69,9 +74,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
+    if (!consentAgreed) {
+      setError('Please acknowledge and agree to the Terms & Conditions and Privacy Policy below.');
+      return;
+    }
+
+    if (!checkRateLimit('process_order', 2500)) {
+      setError('Please wait a moment before resubmitting.');
+      return;
+    }
+
+    const cleanMomo = sanitizePhone(momoNumber);
+
     if (paymentMode === 'pay_now') {
-      if (!momoNumber.trim()) {
-        setError('Please enter your Mobile Money or contact phone number for verification.');
+      if (!cleanMomo) {
+        setError('Please enter a valid Mobile Money or contact phone number for verification.');
         return;
       }
     }
@@ -94,10 +111,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const newOrder: CustomerOrder = {
         id: genId(),
         customerId: user.uid,
-        customerName: user.displayName || userProfile?.displayName || user.email?.split('@')[0] || 'Valued Client',
-        customerEmail: user.email || '',
-        customerPhone: momoNumber || userProfile?.phone || '',
-        customerCompany: userProfile?.company || '',
+        customerName: sanitizeText(user.displayName || userProfile?.displayName || user.email?.split('@')[0] || 'Valued Client'),
+        customerEmail: sanitizeText(user.email || ''),
+        customerPhone: cleanMomo || sanitizePhone(userProfile?.phone || ''),
+        customerCompany: sanitizeText(userProfile?.company || ''),
         orderNumber: orderRef,
         items,
         subtotal,
@@ -111,7 +128,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         receiptNumber,
         paymentChannel: isLater ? 'Book & Pay Later' : paymentChannel,
         transactionRef: !isLater ? `TXN-${Date.now().toString(36).toUpperCase()}` : undefined,
-        eventDetails: eventNotes,
+        eventDetails: sanitizeText(eventNotes),
         createdAt: new Date().toISOString(),
       };
 
@@ -360,6 +377,46 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <span>{error}</span>
           </div>
         )}
+
+        {/* Legal Consent Checkbox */}
+        <div className="mt-4 p-3 bg-[#131a24] border border-[#2a3a4a] rounded-xl">
+          <label className="flex items-start gap-2.5 cursor-pointer text-[11px] text-[#cbd5e1] select-none">
+            <input
+              type="checkbox"
+              required
+              checked={consentAgreed}
+              onChange={(e) => setConsentAgreed(e.target.checked)}
+              className="mt-0.5 rounded border-[#2a3a4a] text-[#f5b342] focus:ring-[#f5b342] h-4 w-4 bg-[#0b0e14]"
+            />
+            <span>
+              I have read, understood, and agree to the{' '}
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('terms')}
+                className="text-[#f5b342] underline hover:text-[#e6a63c]"
+              >
+                Terms & Conditions
+              </button>
+              ,{' '}
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('refund')}
+                className="text-[#f5b342] underline hover:text-[#e6a63c]"
+              >
+                Refund Policy
+              </button>
+              , and{' '}
+              <button
+                type="button"
+                onClick={() => onOpenLegal?.('privacy')}
+                className="text-[#f5b342] underline hover:text-[#e6a63c]"
+              >
+                Privacy Policy (Act 843)
+              </button>
+              .
+            </span>
+          </label>
+        </div>
 
         {/* Buttons */}
         <div className="mt-6 flex items-center justify-between gap-3">
