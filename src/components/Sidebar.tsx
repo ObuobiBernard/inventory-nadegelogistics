@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <img
-            src="/nadege logo.jpg"
+            src="/nadege-logo.jpg"
             alt="NADEGE Logistics"
             className="max-h-14 w-auto object-contain mb-2 rounded"
             onError={(e) => {

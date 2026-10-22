@@ -84,7 +84,7 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
           {/* Brand */}
           <div className="flex items-center gap-2.5">
             <img
-              src="/nadege logo.jpg"
+              src="/nadege-logo.jpg"
               alt="NADEGE Logistics"
               className="h-8 sm:h-10 w-auto object-contain rounded drop-shadow"
               onError={(e) => {
