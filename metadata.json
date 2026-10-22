@@ -2,5 +2,8 @@
   "name": "NADEGE Logistics - Inventory Management",
   "description": "Inventory management and rental system (RMS) for NADEGE Logistics with equipment tracking, rentals, sales, customers, catalog, and Google Sheets sync.",
   "permissions": [],
-  "capabilities": []
+  "capabilities": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

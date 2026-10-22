@@ -16,6 +16,7 @@ import {
   Sparkles,
   SlidersHorizontal,
 } from 'lucide-react';
+import { ObChatWidget } from './ObChatWidget';
 
 interface ClientCatalogProps {
   equipment: Equipment[];
@@ -78,20 +79,20 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
   return (
     <div className="min-h-screen bg-[#0b0e14] text-[#edf2f7] flex flex-col antialiased">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-[#0f151e]/95 backdrop-blur-md border-b border-[#2a3a4a] px-4 sm:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-[#0f151e]/95 backdrop-blur-md border-b border-[#2a3a4a] px-3 sm:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {/* Brand */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <img
               src="/nadege logo.jpg"
               alt="NADEGE Logistics"
-              className="h-10 w-auto object-contain rounded drop-shadow"
+              className="h-8 sm:h-10 w-auto object-contain rounded drop-shadow"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
             <div>
-              <span className="font-bold text-base text-[#edf2f7] block leading-tight">
+              <span className="font-bold text-sm sm:text-base text-[#edf2f7] block leading-tight">
                 NADEGE Logistics
               </span>
               <span className="text-[10px] text-[#f5b342] font-semibold uppercase tracking-wider">
@@ -101,7 +102,7 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
           </div>
 
           {/* Right Navigation & Cart */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center flex-wrap gap-2">
             {/* My Orders Tab */}
             {user && (
               <button
@@ -605,6 +606,7 @@ export const ClientCatalog: React.FC<ClientCatalogProps> = ({
           </div>
         </div>
       </footer>
+      <ObChatWidget />
     </div>
   );
 };
